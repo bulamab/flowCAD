@@ -1,5 +1,9 @@
-from links import *
-from nodes import *
+try:
+    from .links import *
+    from .nodes import *
+except ImportError:
+    from links import *
+    from nodes import *
 
 
 class HydraulicNetwork:

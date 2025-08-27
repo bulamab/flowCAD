@@ -1,4 +1,11 @@
-from components import HydraulicComponent, HydraulicNode
+try:
+    from .components import HydraulicComponent, HydraulicNode
+except ImportError:
+    from components import HydraulicComponent, HydraulicNode
+
+
+
+
 from typing import List
 
 
