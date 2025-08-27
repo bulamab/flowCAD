@@ -1,0 +1,36 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run Tests",
+            "type": "shell",
+            "command": "${config:python.defaultInterpreterPath}",
+            "args": ["-m", "pytest", "tests/", "-v"],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": "$pytest"
+        },
+        {
+            "label": "Format Code",
+            "type": "shell",
+            "command": "${config:python.defaultInterpreterPath}",
+            "args": ["-m", "black", "src/", "tests/"],
+            "group": "build"
+        },
+        {
+            "label": "Run Hydraulic Tests",
+            "type": "shell",
+            "command": "${config:python.defaultInterpreterPath}",
+            "args": ["-m", "pytest", "tests/test_hydraulic/", "-v"],
+            "group": "test"
+        }
+    ]
+}

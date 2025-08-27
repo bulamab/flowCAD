@@ -1,0 +1,16 @@
+name: flowcad                    # ← Nom de votre environnement Conda
+channels:                       # ← "Magasins" où chercher les packages
+  - conda-forge                 # ← Magasin communautaire (recommandé)
+  - defaults                    # ← Magasin officiel Anaconda
+dependencies:                   # ← Liste des "ingrédients" nécessaires
+  - python=3.11                 # ← Version précise de Python
+  - numpy                       # ← Calculs numériques
+  - pandas                      # ← Manipulation de données  
+  - matplotlib                  # ← Graphiques (pour plus tard)
+  - pytest                      # ← Tests unitaires
+  - black                       # ← Formatage automatique du code
+  - pylint                      # ← Vérification qualité du code
+  - pip                         # ← Gestionnaire de packages Python
+  - pip:                        # ← Packages disponibles seulement via pip
+    - wntr                      # ← Notre moteur hydraulique !
+    - PyQt5                     # ← Interface graphique (pour plus tard)
