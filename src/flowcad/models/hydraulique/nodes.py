@@ -3,12 +3,18 @@ try:
 except ImportError:
     from components import HydraulicComponent, HydraulicNode
 
+"""
+Définit les nœuds hydrauliques suivants:
+- Junction (jonction)
+- Reservoir (réservoir) 
+- tank (réservoir avec niveau variable)
+"""
 
 
 
 from typing import List
 
-
+#définit une jonction, basé sur HydraulicNode---------------------------------------------------------------------------------
 class Junction(HydraulicNode):
     """
     Classe représentant une jonction hydraulique.
@@ -33,7 +39,8 @@ class Junction(HydraulicNode):
             elevation=self.elevation
         )
         return wn_network.get_node(self.id)
-    
+
+#définit un réservoir, basé sur HydraulicNode---------------------------------------------------------------------------------
 class Reservoir(HydraulicNode):
     """
     Classe représentant un réservoir hydraulique.
@@ -57,7 +64,8 @@ class Reservoir(HydraulicNode):
             base_head=self.head
         )
         return wn_network.get_node(self.id)
-    
+
+#définit un tank, basé sur HydraulicNode---------------------------------------------------------------------------------
 class tank(HydraulicNode):
     """
     Classe représentant un réservoir (tank) hydraulique.

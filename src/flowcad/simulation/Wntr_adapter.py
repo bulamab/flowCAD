@@ -1,7 +1,7 @@
 from ..models.hydraulique.network import HydraulicNetwork
 from ..models.hydraulique.components import HydraulicComponent, HydraulicNode, HydraulicLink
 from ..models.hydraulique.nodes import Junction, Reservoir, tank
-from ..models.hydraulique.links import Pipe, Pump   
+from ..models.hydraulique.links import Pipe, Pump, Valve   
 from typing import List 
 
 import wntr 
@@ -56,6 +56,8 @@ if __name__ == "__main__":
 
     #ajouter une jonction intermédiaire
     j1 = Junction("J1", demand=0.0, elevation=0.0)
+    j2 = Junction("J2", demand=0.0, elevation=0.0)
+    sim_manager.add_node(j2) # Ajouter la jonction au réseau
     sim_manager.add_node(j1) # Ajouter la jonction au réseau
 
     # Ajouter un tuyau entre R1 et J1
@@ -65,9 +67,13 @@ if __name__ == "__main__":
     #p2 = Pipe("P2", start_node="J1", end_node="R2", length=100.0, diameter=0.3, roughness=0.0002)
     #sim_manager.add_link(p2)  # Ajouter le tuyau au réseau
 
-    #Ajouter une pompe entre J1 et R2
-    p2 = Pump("P2", start_node="J1", end_node="R2", curve_points=[(1, 30)]) # 
+    #Ajouter une pompe entre J2 et R2
+    p2 = Pump("P2", start_node="J2", end_node="R2", curve_points=[(1, 30)]) # 
     sim_manager.add_link(p2)  # Ajouter la pompe au réseau
+
+    #ajouter une valve entre J1 et J2
+    v1 = Valve("V1", start_node="J1", end_node="J2", diameter=0.2, valve_type='PRV', setting=20.0)
+    sim_manager.add_link(v1)  # Ajouter la valve au réseau
 
     # Valider le réseau
     errors = sim_manager.validate()
@@ -88,10 +94,11 @@ if __name__ == "__main__":
             print(f"  {node_id}: {pressure:.2f} m")
         
         print("Charge totale aux nœuds:")
-        for node_id in ["R1", "J1", "R2"]:
+        for node_id in ["R1", "J1", "J2", "R2"]:
             head = results.node['head'].loc[0, node_id]
             print(f"  {node_id}: {head:.2f} m")
         
-        print("Débits dans les tuyaux:")
+        print("Débits dans les tuyaux/pompes/vannes:")
         print(f"  P1: {results.link['flowrate'].loc[0, 'P1']*1000:.2f} L/s")
         print(f"  P2: {results.link['flowrate'].loc[0, 'P2']*1000:.2f} L/s")
+        print(f"  V1: {results.link['flowrate'].loc[0, 'V1']*1000:.2f} L/s")
