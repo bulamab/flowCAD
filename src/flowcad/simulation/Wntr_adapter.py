@@ -28,7 +28,11 @@ class SimulationManager:
     
     def run_simulation(self):
         wn_network = self.network.to_wntr()
-        
+
+        #afficher les propriétés du fluide utilisé
+        print(f"  Viscosité: {wn_network.options.hydraulic.viscosity}")
+        print(f"  Gravité spécifique: {wn_network.options.hydraulic.specific_gravity}")
+
         #paramétrer les options de simulation   
         wn_network.options.time.duration = 3600  # 1 heure
         wn_network.options.time.hydraulic_timestep = 3600  # Pas de 1 heure
@@ -102,3 +106,6 @@ if __name__ == "__main__":
         print(f"  P1: {results.link['flowrate'].loc[0, 'P1']*1000:.2f} L/s")
         print(f"  P2: {results.link['flowrate'].loc[0, 'P2']*1000:.2f} L/s")
         print(f"  V1: {results.link['flowrate'].loc[0, 'V1']*1000:.2f} L/s")
+
+
+    

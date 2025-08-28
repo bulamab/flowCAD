@@ -1,18 +1,18 @@
-try:
-    from .links import *
-    from .nodes import *
-except ImportError:
-    from links import *
-    from nodes import *
+
+from .links import *
+from .nodes import *
+from ..fluid import Fluid  
+
 
 
 class HydraulicNetwork:
     """
     Classe représentant un réseau hydraulique composé de nœuds et de liens.
     """
-    def __init__(self):
+    def __init__(self, fluid: Fluid = Fluid()):
         self.nodes = {}
         self.links = {}
+        self.fluid = fluid  # Propriétés du fluide utilisé dans le réseau
 
     def add_node(self, node: HydraulicNode):
         if node.id in self.nodes:
@@ -43,6 +43,10 @@ class HydraulicNetwork:
     def to_wntr(self):
         import wntr
         wn_network = wntr.network.WaterNetworkModel()
+
+        #definir les propriétés du fluide dans le modèle WNTR, pour le cas ou le fluide n'est pas de l'eau
+        wn_network.options.hydraulic.viscosity = self.fluid.relative_viscosity()
+        wn_network.options.hydraulic.specific_gravity = self.fluid.relative_density()
         
         # Ajouter les nœuds
         for node in self.nodes.values():

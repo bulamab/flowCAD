@@ -71,7 +71,7 @@ class Pump(HydraulicLink):
         self.Speed = Speed  # Vitesse de la pompe (facteur multiplicatif)
         if curve_points is None: 
             #courbe par défaut si non fournie
-            curve_points = [(40, 10)]
+            self.curve_points = [(40, 10)]
         else:
             self.curve_points = curve_points
         
@@ -90,6 +90,10 @@ class Pump(HydraulicLink):
             errors.append("La courbe doit être une liste de un seul tuple (débit, hauteur)")
         
         return errors
+    
+    #représentation textuelle de la pompe
+    def __str__(self) -> str:
+        return f"Pump(id='{self.id}', start_node='{self.start_node}', end_node='{self.end_node}', curve_points={self.curve_points}, Speed={self.Speed})"
     
     def to_wntr(self, wn_network):
 

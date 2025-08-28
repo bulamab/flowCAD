@@ -36,6 +36,7 @@ class HydraulicComponent(ABC):
         self.is_active = True
         self.metadata: Dict[str, Any] = {}
     
+
     @abstractmethod
     def to_wntr(self, wn_network):
         """
