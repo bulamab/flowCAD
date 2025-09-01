@@ -7,6 +7,8 @@ Classe de base pour tous les composants hydrauliques FlowCAD
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 
+from wntr.sim.results import SimulationResults
+
 
 class HydraulicComponent(ABC):
     """
@@ -35,6 +37,26 @@ class HydraulicComponent(ABC):
             
         self.is_active = True
         self.metadata: Dict[str, Any] = {}
+
+    #classe qui va chercher les résutlats du composant dans la couche wntr
+    @abstractmethod
+    def get_results_from_wntr(self, wntr_results: SimulationResults):
+        """
+        Récupère les résultats de simulation pour ce composant à partir des résultats WNTR.
+        
+        Cette méthode doit être implémentée par chaque composant spécialisé
+        pour extraire les résultats pertinents du format WNTR.
+        
+        Args:
+            wn_results: Résultats de la simulation WNTR
+            
+        Returns:
+            Dict[str, Any]: Dictionnaire des résultats spécifiques au composant
+            
+        Raises:
+            NotImplementedError: Si la méthode n'est pas implémentée
+        """
+        pass
     
 
     @abstractmethod
@@ -72,7 +94,7 @@ class HydraulicComponent(ABC):
     
     def __str__(self) -> str:
         """Représentation textuelle du composant"""
-        return f"{self.__class__.__name__}(id='{self.id}')"
+        return (f"{self.__class__.__name__}(id='{self.id}')")
     
     def __repr__(self) -> str:
         """Représentation pour debug"""
@@ -87,6 +109,10 @@ class HydraulicNode(HydraulicComponent):
     def __init__(self, component_id: str, elevation: float = 0.0):
         super().__init__(component_id)
         self.elevation = elevation  # en mètres
+
+        #les résultats de la simulation
+        self.head: Optional[float] = None  # en mètres, peut être défini pour certains nœuds
+        self.pressure: Optional[float] = None  # en mètres, peut être défini pour certains nœuds
     
     def validate_flowcad(self) -> List[str]:
         errors = super().validate_flowcad()
@@ -99,6 +125,22 @@ class HydraulicNode(HydraulicComponent):
     def to_wntr(self, wn_network):
         return super().to_wntr(wn_network)  # Appel de la méthode abstraite 
     
+    #va chercher les résultats du nœud dans la couche wntr 
+    def get_results_from_wntr(self, wntr_results: SimulationResults):
+        if self.id in wntr_results.node['head']:
+            self.head = wntr_results.node['head'][self.id].iloc[-1]
+        if self.id in wntr_results.node['pressure']:
+            self.pressure = wntr_results.node['pressure'][self.id].iloc[-1]
+    
+    #définit la vue textuelle du nœud
+    def __str__(self) -> str:
+        base = super().__str__() #information de la classe de base
+        return (
+            f"Informations de {base}\n"
+            f"Résultats des noeuds: head={self.head}, pressure={self.pressure}, elevation={self.elevation}" 
+        )
+
+    
 class HydraulicLink(HydraulicComponent):
     """
     Classe de base pour les liens hydrauliques (tuyaux, pompes).
@@ -108,6 +150,12 @@ class HydraulicLink(HydraulicComponent):
         super().__init__(component_id)
         self.start_node = start_node
         self.end_node = end_node
+
+        #les résultats de la simulation
+        self.flowrate: Optional[float] = None  # en m³/s
+        self.headloss: Optional[float] = None  # en mCE
+        self.velocity: Optional[float] = None  # en m/s 
+        self.frictionfactor: Optional[float] = None  # le facteur de friction de Darcy-Weisbach
     
     def validate_flowcad(self) -> List[str]:
         errors = super().validate_flowcad()
@@ -125,6 +173,25 @@ class HydraulicLink(HydraulicComponent):
     
     def to_wntr(self, wn_network):
         return super().to_wntr(wn_network)  # Appel de la méthode abstraite 
+    
+    #va chercher les résultats du lien dans la couche wntr 
+    def get_results_from_wntr(self, wntr_results: SimulationResults):
+        if self.id in wntr_results.link['flowrate']:
+            self.flowrate = wntr_results.link['flowrate'][self.id].iloc[-1]
+        if self.id in wntr_results.link['headloss']:
+            self.headloss = wntr_results.link['headloss'][self.id].iloc[-1]
+        if self.id in wntr_results.link['velocity']:
+            self.velocity = wntr_results.link['velocity'][self.id].iloc[-1]
+        if self.id in wntr_results.link['friction_factor']:
+            self.frictionfactor = wntr_results.link['friction_factor'][self.id].iloc[-1]
+
+    #définit la vue textuelle du lien
+    def __str__(self) -> str:
+        base = super().__str__() #information de la classe de base
+        return (
+            f"Informations de {base}\n"
+            f"Résultats des liens: flowrate={self.flowrate}, headloss={self.headloss}, velocity={self.velocity}"
+        )
 
 
 

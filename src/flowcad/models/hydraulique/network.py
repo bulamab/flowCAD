@@ -3,7 +3,7 @@ from .links import *
 from .nodes import *
 from ..fluid import Fluid  
 
-
+from wntr.sim.results import SimulationResults
 
 class HydraulicNetwork:
     """
@@ -57,6 +57,20 @@ class HydraulicNetwork:
             link.to_wntr(wn_network)
         
         return wn_network
+    
+    #cherche les résultats de la simulation dans la couche wntr et les attribue aux composants
+    def get_results_from_wntr(self, wntr_results: SimulationResults):
+        for node in self.nodes.values():
+            node.get_results_from_wntr(wntr_results)
+        
+        for link in self.links.values():
+            link.get_results_from_wntr(wntr_results)
+    
+    #Représentation textuelle du réseau hydraulique
+    def __str__(self) -> str:   
+        node_str = "\n".join(str(node) for node in self.nodes.values())
+        link_str = "\n".join(str(link) for link in self.links.values())
+        return f"HydraulicNetwork(fluid={self.fluid})\nNodes:\n{node_str}\nLinks:\n{link_str}"
     
 #Test simple de la classe HydraulicNetwork
 if __name__ == "__main__":

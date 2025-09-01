@@ -39,6 +39,7 @@ class Junction(HydraulicNode):
             elevation=self.elevation
         )
         return wn_network.get_node(self.id)
+    
 
 #définit un réservoir, basé sur HydraulicNode---------------------------------------------------------------------------------
 class Reservoir(HydraulicNode):

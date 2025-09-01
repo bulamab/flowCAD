@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
+
 from ..hydraulique.components import HydraulicComponent
+from ..hydraulique.network import HydraulicNetwork
+
 
 #classe de base pour tous les ports d'un équipement---------------------------------------------------------------------------------
 
@@ -41,6 +44,10 @@ class Port:
         self.is_connected = False
         self.connected_to_equipment: Optional[str] = None  # ID de l'équipement connecté, None si non connecté
         self.connected_to_port: Optional[str] = None  # ID du port connecté, None si non connecté
+
+        #les résultats de la simulation
+        self.head: Optional[float] = None  # en kPa (attention, transformation nécessaire de mCE en kPa!)
+        self.pressure: Optional[float] = None  # en kPa 
 
     #Methodes de connexion/déconnexion du port =================================================================================
 
@@ -133,7 +140,7 @@ class Port:
     def __str__(self) -> str:
         status = "connecté" if self.is_connected else "déconnecté"
         connected_info = f" à {self.connected_to_equipment}.{self.connected_to_port}" if self.is_connected else ""
-        return f"Port(id='{self.id}', parent_equipment_id='{self.parent_equipment_id}', status='{status}'{connected_info})"
+        return f"Port(id='{self.id}', parent_equipment_id='{self.parent_equipment_id}', status='{status}'{connected_info}, head={self.head} (kPa), pressure={self.pressure} (kPa))"
 
 #========================================================================================================================
 #Classe de base pour tous les équipements---------------------------------------------------------------------------------
@@ -202,7 +209,7 @@ class BaseEquipment(ABC):
             "ports": [port.get_port_info() for port in self.get_all_ports()]
         }
     
-    #Methode pour verifier si l'équipement est complètement connecté (tous les ports connectés)
+    #methode pour verifier si l'équipement est complètement connecté (tous les ports connectés)
     def is_fully_connected(self) -> bool:
         return all(port.is_port_connected() for port in self.get_all_ports())
     
@@ -245,8 +252,16 @@ class BaseEquipment(ABC):
             errors.append(f"L'équipement '{self.id}' a des ports avec des IDs dupliqués") 
 
         return errors
-
-
+    
+    #methode pour obtenirs les résutlats de la simulation depuis le réseau hydraulique
+    @abstractmethod
+    def get_simulation_results(self, network: HydraulicNetwork, connections: Dict[str, str]):
+        """
+        Méthode abstraite pour obtenir les résultats de la simulation depuis le réseau hydraulique.
+        
+        Doit être implémentée par les classes dérivées.
+        """
+        pass
 
 
 #test simple de la classe Port---------------------------------------------------------------------------------

@@ -5,7 +5,10 @@ except ImportError:
 
 from typing import List 
 
+#===============================================================================================================================================
 #Definit un tuyau, basé sur HydraulicLink---------------------------------------------------------------------------------
+#===============================================================================================================================================
+
 class Pipe(HydraulicLink):
     """
     Classe représentant un tuyau hydraulique.
@@ -15,8 +18,8 @@ class Pipe(HydraulicLink):
         super().__init__(component_id, start_node, end_node)
         self.length = length  # en mètres
         self.diameter = diameter  # en mètres
-        self.roughness = roughness  # en mm
-        self.minor_loss = minor_loss  # coefficient de perte mineure
+        self.roughness = roughness  # en mètres
+        self.minor_loss = minor_loss  # coefficient de perte mineure (idem zeta, mais pour donner au final des pertes de charges en mètres)
         self.status = status  # 'OPEN' ou 'CLOSED'  
         self.check_valve = check_valve  # True ou False
 
@@ -59,7 +62,10 @@ class Pipe(HydraulicLink):
         )
         return wn_network.get_link(self.id)
 
+#===============================================================================================================================================
 #définit une pompe, basé sur HydraulicLink---------------------------------------------------------------------------------
+#===============================================================================================================================================
+
 class Pump(HydraulicLink):
     """
     Classe représentant une pompe hydraulique.
@@ -114,7 +120,10 @@ class Pump(HydraulicLink):
         )
         return wn_network.get_link(self.id)    
 
+#===============================================================================================================================================
 #définit une valve, basé sur HydraulicLink---------------------------------------------------------------------------------
+#===============================================================================================================================================
+
 class Valve(HydraulicLink):
     """
     Classe représentant une valve hydraulique.
