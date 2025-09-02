@@ -5,6 +5,7 @@
 Classes graphiques pour représenter les équipements hydrauliques sur le canvas
 """
 
+from logging import root
 from PyQt5.QtWidgets import QGraphicsItem, QGraphicsTextItem, QGraphicsEllipseItem
 from PyQt5.QtCore import Qt, QRectF, pyqtSignal, QObject
 from PyQt5.QtGui import QColor, QBrush, QPen, QPainter
@@ -12,6 +13,9 @@ from PyQt5.QtSvg import QGraphicsSvgItem
 import os
 from enum import Enum
 from typing import Dict, List, Optional
+
+import re
+import xml.etree.ElementTree as ET
 
 # =============================================================================
 # ÉNUMÉRATION POUR L'ÉTAT DES PORTS
@@ -24,13 +28,6 @@ class PortStatus(Enum):
     HIGHLIGHTED = "highlighted"      # Port en surbrillance (hover)
     SELECTED = "selected"           # Port sélectionné
     ERROR = "error"                 # Port en erreur
-
-class PortType(Enum):
-    """Types de ports hydrauliques"""
-    HYDRAULIC_INLET = "hydraulic_inlet"      # Entrée hydraulique
-    HYDRAULIC_OUTLET = "hydraulic_outlet"    # Sortie hydraulique
-    CONTROL_SIGNAL = "control_signal"        # Signal de contrôle
-    POWER = "power"                         # Alimentation électrique
 
 # =============================================================================
 # CLASSE POUR UN PORT GRAPHIQUE
@@ -48,14 +45,15 @@ class PortGraphicsItem(QGraphicsEllipseItem):
         PortStatus.ERROR: "#FF4757"             # Rouge foncé : erreur
     }
     
-    def __init__(self, port_id: str, port_type: PortType, parent_equipment=None):
+    def __init__(self, port_id: str, parent_equipment=None):
         # Cercle de rayon 8 pixels centré sur l'origine
         super().__init__(-8, -8, 16, 16)
         
         self.port_id = port_id
-        self.port_type = port_type
         self.parent_equipment = parent_equipment
         self.status = PortStatus.DISCONNECTED
+
+        self.setAcceptHoverEvents(True)
         
         # Rendre le port sélectionnable mais pas déplaçable individuellement
         self.setFlag(QGraphicsItem.ItemIsSelectable, True)
@@ -65,7 +63,7 @@ class PortGraphicsItem(QGraphicsEllipseItem):
         self.update_appearance()
         
         # Tooltip informatif
-        self.setToolTip(f"Port: {port_id}\nType: {port_type.value}")
+        self.setToolTip(f"Port: {port_id}\n")
     
     def update_appearance(self):
         """Met à jour l'apparence selon l'état du port"""
@@ -87,7 +85,7 @@ class PortGraphicsItem(QGraphicsEllipseItem):
     def mousePressEvent(self, event):
         """Gestion du clic sur le port"""
         if event.button() == Qt.LeftButton:
-            print(f"Port cliqué: {self.port_id} (Type: {self.port_type.value})")
+            print(f"Port cliqué: {self.port_id} de l'équipement {self.parent_equipment.equipment_id if self.parent_equipment else 'N/A'}")
             
             # Changer l'état pour montrer la sélection
             if self.status != PortStatus.SELECTED:
@@ -129,11 +127,12 @@ class EquipmentGraphicsItem(QGraphicsItem):
         # Dimensions de base de l'équipement
         self.width = 80
         self.height = 60
-        
+        self.item_scale = 1.0
+
         # Composants graphiques
         self.svg_item: Optional[QGraphicsSvgItem] = None
-        self.text_item: Optional[QGraphicsTextItem] = None
         self.ports: Dict[str, PortGraphicsItem] = {}
+        self.ports_infos: List = []
         
         # Rendre l'équipement déplaçable et sélectionnable
         self.setFlag(QGraphicsItem.ItemIsMovable, True)
@@ -152,113 +151,94 @@ class EquipmentGraphicsItem(QGraphicsItem):
         
         # 1. Icône SVG ou fallback
         if self.svg_path and os.path.exists(self.svg_path):
+
+            #extrait les informations du SVG
+            self.ports_infos = self.read_ports_from_svg(self.svg_path)
             self.svg_item = QGraphicsSvgItem(self.svg_path)
             self.svg_item.setParentItem(self)
+            print(f"dimensions: {self.svg_item.boundingRect().width()} x {self.svg_item.boundingRect().height()}")
             # Redimensionner le SVG
-            self.svg_item.setScale(min(self.width / self.svg_item.boundingRect().width(),
-                                     self.height / self.svg_item.boundingRect().height()))
+            self.item_scale = min(self.width / self.svg_item.boundingRect().width(),
+                                  self.height / self.svg_item.boundingRect().height())
+            self.svg_item.setScale(self.item_scale)
+
+    #Lit le nombre de ports et leur position en fonction des informations contenues dans le SVG
+    def read_ports_from_svg(self, svg_path: str) -> List[dict]:
+
+        #ouvre le fichier SVG
+        with open(svg_path, 'r', encoding='utf-8') as f:
+            svg_content = f.read()
         
-        # 2. Nom de l'équipement
-        display_name = self.equipment_def.get('display_name', self.equipment_id)
-        self.text_item = QGraphicsTextItem(display_name)
-        self.text_item.setParentItem(self)
+        #liste des ports
+        ports = []
+
+        #parse le contenu SVG pour extraire les informations des ports
+        root = ET.fromstring(svg_content)
+
+        # Extraire les dimensions du SVG
+        width = float(root.get('width'))
+        height = float(root.get('height'))
+        viewBox = root.get('viewBox')
+        min_x, min_y, vb_width, vb_height = map(float, viewBox.split())
+        print(f"SVG dimensions: width={width}, height={height}, viewbox width={vb_width}, height={vb_height}")
+
+        # Chercher tous les éléments avec un attribut id
+        for element in root.iter() :
+            element_id = element.get('id', '')
         
-        # Positionner le texte sous l'équipement
-        text_rect = self.text_item.boundingRect()
-        text_x = (self.width - text_rect.width()) / 2
-        text_y = self.height + 5
-        self.text_item.setPos(text_x, text_y)
-    
+            # Vérifier si l'id contient "Port" suivi d'un nombre
+            match = re.search(r'Port(\d+)', element_id, re.IGNORECASE)
+        
+            if match:
+                numero_port = int(match.group(1))
+            
+                # Extraire les coordonnées cx et cy
+                cx = element.get('cx')
+                cy = element.get('cy')
+            
+                if cx is not None and cy is not None:
+                    ports.append({
+                        'port': numero_port,
+                        'x': float(cx)/vb_width*width,
+                        'y': float(cy)/vb_height*height
+                    })
+
+        #trier les ports par numéro
+        ports.sort(key=lambda x: x['port'])
+
+        #afficher les ports
+        for port in ports:
+            print(f"Port {port['port']}: ({port['x']}, {port['y']})")
+
+        return ports
+
     def create_ports(self):
-        """Crée les ports selon la définition de l'équipement"""
-        
-        # Récupérer les définitions de ports depuis equipment_def
-        # (À adapter selon votre structure JSON)
-        ports_config = self.equipment_def.get('ports', {})
-        
-        if not ports_config:
-            # Configuration par défaut si pas de ports définis
-            ports_config = self.get_default_ports_config()
-        
-        for port_id, port_config in ports_config.items():
-            self.create_port(port_id, port_config)
-    
-    def get_default_ports_config(self) -> dict:
-        """Configuration par défaut des ports selon le type d'équipement"""
-        
-        # Règles par défaut basées sur le nom de l'équipement
-        equipment_name = self.equipment_def.get('display_name', '').lower()
-        
-        if 'pompe' in equipment_name:
-            return {
-                'inlet': {'type': PortType.HYDRAULIC_INLET, 'position': 'left'},
-                'outlet': {'type': PortType.HYDRAULIC_OUTLET, 'position': 'right'}
-            }
-        elif 'vanne' in equipment_name:
-            return {
-                'inlet': {'type': PortType.HYDRAULIC_INLET, 'position': 'left'},
-                'outlet': {'type': PortType.HYDRAULIC_OUTLET, 'position': 'right'}
-            }
-        elif 'pression' in equipment_name or 'débit' in equipment_name:
-            return {
-                'outlet': {'type': PortType.HYDRAULIC_OUTLET, 'position': 'right'}
-            }
-        else:
-            # Défaut générique
-            return {
-                'port1': {'type': PortType.HYDRAULIC_INLET, 'position': 'left'},
-                'port2': {'type': PortType.HYDRAULIC_OUTLET, 'position': 'right'}
-            }
-    
-    def create_port(self, port_id: str, port_config: dict):
+        """Crée les ports selon les valeurs lues dans le SVG"""
+        for port_info in self.ports_infos:
+            x = port_info['x']*self.item_scale
+            y = port_info['y']*self.item_scale
+            self.create_port(f"P{port_info['port']}", x, y)
+
+
+    def create_port(self, port_id: str, x: float, y: float):
         """Crée un port individuel"""
         
-        # Type de port
-        port_type_str = port_config.get('type', PortType.HYDRAULIC_INLET)
-        if isinstance(port_type_str, str):
-            port_type = PortType(port_type_str)
-        else:
-            port_type = port_type_str
-        
+
         # Créer le port graphique
-        port_item = PortGraphicsItem(port_id, port_type, parent_equipment=self)
+        port_item = PortGraphicsItem(port_id, parent_equipment=self)
         port_item.setParentItem(self)
-        
-        # Positionner le port
-        port_position = port_config.get('position', 'left')
-        self.position_port(port_item, port_position)
+
+        port_item.setPos(x, y)
         
         # Stocker le port
         self.ports[port_id] = port_item
-    
-    def position_port(self, port_item: PortGraphicsItem, position: str):
-        """Positionne un port selon sa configuration"""
-        
-        margin = 8  # Distance du bord de l'équipement
-        
-        if position == 'left':
-            port_item.setPos(-margin, self.height / 2)
-        elif position == 'right':
-            port_item.setPos(self.width + margin, self.height / 2)
-        elif position == 'top':
-            port_item.setPos(self.width / 2, -margin)
-        elif position == 'bottom':
-            port_item.setPos(self.width / 2, self.height + margin)
-        else:
-            # Position par défaut
-            port_item.setPos(0, self.height / 2)
+ 
     
     def boundingRect(self) -> QRectF:
         """Définit la zone de collision/sélection complète"""
         
         # Zone principale de l'équipement
         equipment_rect = QRectF(0, 0, self.width, self.height)
-        
-        # Inclure le texte
-        if self.text_item:
-            text_rect = self.text_item.boundingRect()
-            text_rect.translate(self.text_item.pos())
-            equipment_rect = equipment_rect.united(text_rect)
         
         # Inclure les ports (avec une marge pour faciliter la sélection)
         port_margin = 12
@@ -331,82 +311,3 @@ class EquipmentGraphicsFactory:
         """Crée un équipement graphique selon sa définition"""
         
         return EquipmentGraphicsItem(equipment_id, equipment_def, svg_path)
-
-# =============================================================================
-# STRUCTURE DE FICHIERS RECOMMANDÉE
-# =============================================================================
-
-"""
-Structure recommandée :
-
-src/flowcad/gui/
-├── graphics/
-│   ├── __init__.py
-│   ├── equipment_graphics.py      # Ce fichier
-│   ├── connection_graphics.py     # Pour les tuyaux (plus tard)
-│   └── port_graphics.py          # Si les ports deviennent complexes
-├── components/
-│   ├── equipment_panel.py         # Panneau de sélection
-│   ├── drawing_canvas.py          # Zone de dessin
-│   └── properties_panel.py        # Panneau des propriétés
-└── main_window.py
-"""
-
-# =============================================================================
-# EXEMPLE D'UTILISATION
-# =============================================================================
-
-def test_equipment_graphics():
-    """Test des équipements graphiques avec ports"""
-    import sys
-    from PyQt5.QtWidgets import QApplication, QGraphicsView, QGraphicsScene, QVBoxLayout, QWidget
-    
-    app = QApplication(sys.argv)
-    
-    # Créer une scène de test
-    scene = QGraphicsScene()
-    view = QGraphicsView(scene)
-    view.setSceneRect(0, 0, 800, 600)
-    
-    # Définitions d'équipements de test
-    pump_def = {
-        'display_name': 'Pompe Test',
-        'color': '#FF6B6B',
-        'ports': {
-            'inlet': {'type': PortType.HYDRAULIC_INLET, 'position': 'left'},
-            'outlet': {'type': PortType.HYDRAULIC_OUTLET, 'position': 'right'}
-        }
-    }
-    
-    valve_def = {
-        'display_name': 'Vanne Test',
-        'color': '#4ECDC4',
-        'ports': {
-            'inlet': {'type': PortType.HYDRAULIC_INLET, 'position': 'left'},
-            'outlet': {'type': PortType.HYDRAULIC_OUTLET, 'position': 'right'},
-            'control': {'type': PortType.CONTROL_SIGNAL, 'position': 'top'}
-        }
-    }
-    
-    # Créer des équipements
-    pump = EquipmentGraphicsItem('PUMP_001', pump_def)
-    pump.setPos(100, 100)
-    scene.addItem(pump)
-    
-    valve = EquipmentGraphicsItem('VALVE_001', valve_def)
-    valve.setPos(300, 100)
-    scene.addItem(valve)
-    
-    # Afficher
-    view.show()
-    view.setWindowTitle("Test Équipements avec Ports")
-    
-    print("Instructions:")
-    print("- Cliquez sur les cercles colorés (ports) pour les sélectionner")
-    print("- Cliquez sur les équipements pour les déplacer") 
-    print("- Les ports changent de couleur selon leur état")
-    
-    sys.exit(app.exec_())
-
-if __name__ == "__main__":
-    test_equipment_graphics()
