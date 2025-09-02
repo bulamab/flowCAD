@@ -1,0 +1,123 @@
+{
+  "equipment_categories": {
+    "pump": {
+      "display_name": "pompes",
+      "equipment_items": [
+            "pompe_simple"
+          ]
+    },
+    "valves": {
+      "display_name": "Vannes",
+      "subcategories": {
+        "vannes_arret": {
+          "display_name": "Vannes d'arrêt",
+          "equipment_items": [
+            "vannes_arret"
+          ]
+        },
+        "vannes_equilibrage": {
+          "display_name": "Vannes d'Équilibrage",
+          "equipment_items": [
+            "vannes_equilibrage"
+          ]
+        }
+      }
+    },
+    "consumers": {
+      "display_name": "Consommateurs",
+      "subcategories": {
+        "consommateur_1": {
+          "display_name": "Consommateur 1",
+          "equipment_items": [
+            "consommateur_1_1",
+            "consommateur_1_2"
+          ]
+        },
+        "consommateur_2": {
+          "display_name": "Consommateur 2",
+          "equipment_items": [
+            "consommateur_2_1",
+            "consommateur_2_2"
+          ]
+        }
+      }
+    },
+    "Expansion": {
+      "display_name": "Expansion",
+      "equipment_items": [
+        "expansion_simple"
+      ]
+    },
+    "Boundary": {
+      "display_name": "Conditions Limites",
+      "equipment_items": [
+        "Fixed_pressure",
+        "Fixed_flowrate"
+      ]
+    }
+  },
+
+  "equipment_definitions": {
+    "pompe_simple": {
+      "display_name": "Pompe",
+      "description": "pompe centrifuge",
+      "icon_svg": "icons/pompes/pompe_simple.svg",
+      "color": "#FF6B6B"
+    },
+    "vannes_arret": {
+      "display_name": "Vanne d'arrêt",
+      "description": "vanne d'arrêt",
+      "icon_svg": "icons/vannes/vannes_arret.svg",
+      "color": "#FF6B6B"
+    },
+    "vannes_equilibrage": {
+      "display_name": "Vanne d'Équilibrage",
+      "description": "vanne d'équilibrage",
+      "icon_svg": "icons/vannes/vannes_equilibrage.svg",
+      "color": "#FF6B6B"
+    },
+    "consommateur_1_1": {
+      "display_name": "Consommateur 1.1",
+      "description": "Description du consommateur 1.1",
+      "icon_svg": "icons/consommateurs/consommateur_1_1.svg",
+      "color": "#FF6B6B"
+    },
+    "consommateur_1_2": {
+      "display_name": "Consommateur 1.2",
+      "description": "Description du consommateur 1.2",
+      "icon_svg": "icons/consommateurs/consommateur_1_2.svg",
+      "color": "#FF6B6B"
+    },
+        "consommateur_2_1": {
+      "display_name": "Consommateur 2.1",
+      "description": "Description du consommateur 2.1",
+      "icon_svg": "icons/consommateurs/consommateur_2_1.svg",
+      "color": "#FF6B6B"
+    },
+    "consommateur_2_2": {
+      "display_name": "Consommateur 2.2",
+      "description": "Description du consommateur 2.2",
+      "icon_svg": "icons/consommateurs/consommateur_2_2.svg",
+      "color": "#FF6B6B"
+    },
+    "expansion_simple": {
+      "display_name": "Dispositif d'expansion",
+      "description": "Dispositif d'expansion simple",
+      "icon_svg": "icons/expansion/expansion_simple.svg",
+      "color": "#FF6B6B"
+    },
+    "Fixed_pressure": {
+      "display_name": "Pression Fixe",
+      "description": "Condition limite de pression fixe",
+      "icon_svg": "icons/boundary/fixed_pressure.svg",
+      "color": "#1E90FF"
+    },
+    "Fixed_flowrate": {
+      "display_name": "Débit Fixe",
+      "description": "Condition limite de débit fixe",
+      "icon_svg": "icons/boundary/fixed_flowrate.svg",
+      "color": "#1E90FF"
+    }
+  }
+}
+

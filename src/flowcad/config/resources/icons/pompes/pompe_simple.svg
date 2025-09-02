@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="6.9651022mm"
+   height="7.5299587mm"
+   viewBox="0 0 6.9651022 7.5299587"
+   version="1.1"
+   id="svg1"
+   xml:space="preserve"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><defs
+     id="defs1" /><g
+     id="layer1"
+     transform="translate(-43.312067,-134.16827)"><circle
+       style="fill:#e6e6e6;stroke:none;stroke-width:1.6068;stroke-dasharray:none"
+       id="Port2"
+       cx="46.794621"
+       cy="134.66827"
+       r="0.5" /><circle
+       style="fill:#e6e6e6;stroke:none;stroke-width:1.6068;stroke-dasharray:none"
+       id="Port1"
+       cx="46.794621"
+       cy="141.19823"
+       r="0.5" /><g
+       id="pump1"
+       transform="rotate(90,37.36243,103.60549)"><title
+         id="title7">pompe</title><circle
+         style="fill:#ffffff;stroke:#000000;stroke-width:0.3;stroke-dasharray:none;stroke-opacity:1"
+         id="path1"
+         cx="71.692062"
+         cy="94.147491"
+         r="3.3067451" /><path
+         style="fill:#000000;stroke:#000000;stroke-width:1;stroke-dasharray:none;stroke-opacity:1"
+         id="path2"
+         d="m 74.169556,133.26312 -7.446397,-4.29918 7.446397,-4.29918 z"
+         transform="matrix(0.40122979,0,0,0.67417618,41.947731,7.2291732)" /></g></g></svg>

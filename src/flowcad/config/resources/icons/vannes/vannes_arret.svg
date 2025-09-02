@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="30"
+   height="30"
+   viewBox="0 0 7.9374998 7.9375"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <circle
+     style="fill:#e6e6e6;stroke:none;stroke-width:1.70053;stroke-dasharray:none"
+     id="Port2"
+     cx="3.96875"
+     cy="0.52916664"
+     r="0.52916664" />
+  <circle
+     style="fill:#e6e6e6;stroke:none;stroke-width:1.70053;stroke-dasharray:none"
+     id="Port1"
+     cx="3.96875"
+     cy="7.4083333"
+     r="0.52916664" />
+  <g
+     id="Vanne">
+    <path
+       style="fill:#ffffff;stroke:#000000;stroke-width:0.366936;stroke-dasharray:none;stroke-opacity:1"
+       id="path3-4"
+       d="m 66.948057,168.83345 0,-3.60178 3.119232,1.80089 z"
+       transform="matrix(0,1.008771,-1.1104448,0,189.44919,-66.820234)" />
+    <path
+       style="fill:#ffffff;stroke:#000000;stroke-width:0.366936;stroke-dasharray:none;stroke-opacity:1"
+       id="path3-4-2"
+       d="m 66.948057,168.83345 0,-3.60178 3.119232,1.80089 z"
+       transform="matrix(0,-1.008771,-1.1104448,0,189.44919,74.650599)" />
+    <ellipse
+       style="fill:#ffffff;stroke:#000000;stroke-width:0.3;stroke-dasharray:none;stroke-opacity:1"
+       id="path4-5"
+       cx="3.96875"
+       cy="-3.96875"
+       rx="0.67178625"
+       ry="0.67752796"
+       transform="rotate(90)" />
+  </g>
+</svg>
