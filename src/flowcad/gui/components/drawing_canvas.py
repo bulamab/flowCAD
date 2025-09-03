@@ -14,7 +14,7 @@ from typing import Dict, List, Optional, Tuple
 
 # Import de la nouvelle classe graphique
 from ..graphics.equipment_graphics import (EquipmentGraphicsItem, PortGraphicsItem, 
-                                         PortStatus, EquipmentGraphicsFactory)
+                                        PortStatus, EquipmentGraphicsFactory)
 
 class DrawingCanvas(QGraphicsView):
     """Zone de dessin principale pour FlowCAD"""
@@ -35,6 +35,9 @@ class DrawingCanvas(QGraphicsView):
         # Gestion des équipements
         self.equipment_counter = 0
         self.equipment_items: Dict[str, EquipmentGraphicsItem] = {}
+
+        #liste des équipements sélectionnés, dans l'ordre
+        self.selected_equipments: List[str] = []
         
         # Loader pour les chemins SVG (à connecter avec votre loader)
         self.equipment_loader = None  # Sera défini par la main_window
@@ -256,18 +259,30 @@ class DrawingCanvas(QGraphicsView):
         """Callback quand la sélection change dans la scène"""
         
         selected_items = self.scene.selectedItems()
-        
+        #afficher tous les éléments sélectionnés
+        eq_id_in_list = []
         for item in selected_items:
             if isinstance(item, EquipmentGraphicsItem):
                 print(f"📍 Équipement sélectionné: {item.equipment_id}")
                 self.equipment_selected.emit(item.equipment_id)
-            
+                #mettre à jour la liste des équipements sélectionnés
+                eq_id_in_list.append(item.equipment_id)
+
+                if item.equipment_id not in self.selected_equipments:
+                    self.selected_equipments.append(item.equipment_id)
+
             elif isinstance(item, PortGraphicsItem):
                 parent_eq = item.parent_equipment
                 if parent_eq:
                     print(f"🔌 Port sélectionné: {item.port_id} de {parent_eq.equipment_id}")
                     self.port_selected.emit(parent_eq.equipment_id, item.port_id)
-    
+        #retire les éléments de la liste self.selected_equipments qui ne sont plus dans
+
+        print(f"eq_id_in_lists: {eq_id_in_list}")
+        print(f"Équipements sélectionnés: {self.selected_equipments}")
+        #retire les éléments de la liste self.selected_equipments qui ne sont plus dans eq_id_in_list
+        self.selected_equipments = [eq_id for eq_id in self.selected_equipments if eq_id in eq_id_in_list]
+
     def select_equipment(self, equipment_id: str):
         """Sélectionne un équipement par programme"""
         equipment_item = self.get_equipment(equipment_id)
@@ -432,6 +447,87 @@ class DrawingCanvas(QGraphicsView):
             equipment_data.append(data)
         
         return equipment_data
+    
+    def rotate_selected_equipment(self, angle):
+        """Fait pivoter les équipements sélectionnés d'un certain angle"""
+        print(f"Rotation de l'équipement sélectionné de {angle}°")
+        selected_items = self.scene.selectedItems()
+        rotated_count = 0
+        
+        for item in selected_items:
+            if isinstance(item, EquipmentGraphicsItem):
+                item.set_rotation_angle(angle)
+                rotated_count += 1
+        
+        if rotated_count > 0:
+            print(f"🔄 {rotated_count} équipement(s) tourné(s)")
+            return True
+        else:
+            print("❌ Aucun équipement sélectionné pour la rotation")
+            return False
+        
+    def mirror_selected_equipment(self, direction):
+        """Fait un miroir des équipements sélectionnés dans la direction spécifiée"""
+        print(f"Miroir de l'équipement sélectionné: {direction}")
+        selected_items = self.scene.selectedItems()
+        mirrored_count = 0
+
+        for item in selected_items:
+            if isinstance(item, EquipmentGraphicsItem):
+                item.set_mirror_direction(direction)
+                mirrored_count += 1
+
+        if mirrored_count > 0:
+            print(f"🔄 {mirrored_count} équipement(s) mis en miroir")
+            return True
+        else:
+            print("❌ Aucun équipement sélectionné pour le miroir")
+            return False
+        
+    def align_selected_equipment(self, direction):
+        print(f"Alignement de l'équipement sélectionné: {direction}")
+        #selected_items = self.scene.selectedItems()
+
+        selected_equipments = [self.equipment_items[eq_id] for eq_id in self.selected_equipments if eq_id in self.equipment_items]
+
+        #si au moins deux éléments, prendre la position du dernier élément
+        if len(selected_equipments) >= 2:
+            last_item = selected_equipments[-1]
+            last_pos = last_item.pos()
+            #si alignement horizontal
+            if direction == "v":
+                for item in selected_equipments[:-1]:
+                    item.setPos(item.pos().x(), last_pos.y())
+            elif direction == "h":
+                for item in selected_equipments[:-1]:
+                    item.setPos(last_pos.x(), item.pos().y())
+
+    def distribute_selected_equipment(self, direction):
+        print(f"Distribution de l'équipement sélectionné: {direction}")
+
+        #la liste des éléments sélectionnés
+        selected_equipments = [self.equipment_items[eq_id] for eq_id in self.selected_equipments if eq_id in self.equipment_items]
+        if len(selected_equipments) < 3:
+            print("❌ Pas assez d'équipements sélectionnés pour distribuer")
+            return False
+
+        #Si distrbution horizontale
+        if direction == "h":
+            xmin = min(item.pos().x() for item in selected_equipments)
+            xmax = max(item.pos().x() for item in selected_equipments)
+            spacing = (xmax - xmin) / (len(selected_equipments) - 1)
+            for i, item in enumerate(selected_equipments):
+                item.setPos(xmin + i * spacing, item.pos().y())
+        elif direction == "v":
+            ymin = min(item.pos().y() for item in selected_equipments)
+            ymax = max(item.pos().y() for item in selected_equipments)
+            spacing = (ymax - ymin) / (len(selected_equipments) - 1)
+            for i, item in enumerate(selected_equipments):
+                item.setPos(item.pos().x(), ymin + i * spacing)
+
+        print(f"🔄 {len(selected_equipments)} équipement(s) distribués")
+        # Mettre à jour l'affichage
+        self.update()
 
 # =============================================================================
 # EXEMPLE D'UTILISATION DANS MAIN_WINDOW

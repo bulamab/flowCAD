@@ -42,6 +42,7 @@ class FlowCADMainWindow(QMainWindow):
         self.drawing_canvas.equipment_dropped.connect(self.on_equipment_dropped)
         self.drawing_canvas.equipment_selected.connect(self.on_equipment_selected)
         self.drawing_canvas.port_selected.connect(self.on_port_selected)
+        
 
         self.setup_ui()
     
@@ -58,7 +59,10 @@ class FlowCADMainWindow(QMainWindow):
         
         # Ajouter la barre d'outils ribbon en haut
         self.ribbon_toolbar = RibbonToolbar(self)
-
+        self.ribbon_toolbar.rotate_equipment.connect(self.on_rotate_equipment)
+        self.ribbon_toolbar.mirror_equipment.connect(self.on_mirror_equipment)
+        self.ribbon_toolbar.align_equipment.connect(self.on_align_equipment)
+        self.ribbon_toolbar.distribute_equipment.connect(self.on_distribute_equipment)
         main_layout.addWidget(self.ribbon_toolbar)
         
         # Layout horizontal pour les panneaux du bas
@@ -92,6 +96,21 @@ class FlowCADMainWindow(QMainWindow):
         print(f"Port sélectionné: {port_id} de {equipment_id}")
         # Préparer le mode connexion
 
+    def on_rotate_equipment(self, angle):
+        print(f"Rotation de l'équipement sélectionné de {angle}°")
+        self.drawing_canvas.rotate_selected_equipment(angle)
+
+    def on_mirror_equipment(self, direction):
+        print(f"Miroir de l'équipement sélectionné: {direction}")
+        self.drawing_canvas.mirror_selected_equipment(direction)
+
+    def on_align_equipment(self, direction):
+        print(f"Alignement de l'équipement sélectionné: {direction}")
+        self.drawing_canvas.align_selected_equipment(direction)
+
+    def on_distribute_equipment(self, direction):
+        print(f"Distribution de l'équipement sélectionné: {direction}")
+        self.drawing_canvas.distribute_selected_equipment(direction)
 
 def main():
     """Point d'entrée de l'application GUI"""
