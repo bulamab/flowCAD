@@ -54,7 +54,7 @@ class FlowCADMainWindow(QMainWindow):
         
         # Layout principal vertical
         main_layout = QVBoxLayout(central_widget)
-        main_layout.setContentsMargins(0, 0, 0, 0)  # Pas de marges
+        main_layout.setContentsMargins(1, 1, 1, 1)  # Pas de marges
         main_layout.setSpacing(0)  # Pas d'espacement
         
         # Ajouter la barre d'outils ribbon en haut
@@ -67,7 +67,7 @@ class FlowCADMainWindow(QMainWindow):
         
         # Layout horizontal pour les panneaux du bas
         panels_layout = QHBoxLayout()
-        panels_layout.setContentsMargins(0, 0, 0, 0)
+        panels_layout.setContentsMargins(1, 1, 1, 1)
         panels_layout.setSpacing(0)
         
         # Panneau équipement à gauche
@@ -83,7 +83,7 @@ class FlowCADMainWindow(QMainWindow):
 
         #setup de la barre de status
         self.statusBar().showMessage("Prêt")
-
+        
     def on_equipment_dropped(self, equipment_id, equipment_def, position):
         print(f"Nouvel équipement: {equipment_id}")
         #self.update_status_message(f"Équipement ajouté: {equipment_def.get('display_name')}")
@@ -111,6 +111,27 @@ class FlowCADMainWindow(QMainWindow):
     def on_distribute_equipment(self, direction):
         print(f"Distribution de l'équipement sélectionné: {direction}")
         self.drawing_canvas.distribute_selected_equipment(direction)
+
+    def on_panel_mode_changed(self, mode):
+        """Callback quand le mode du panneau gauche change"""
+        print(f"🔄 Mode du panneau changé vers: {mode}")
+        
+        if mode == "equipment":
+            self.current_work_mode = WorkModes.EQUIPMENT
+            self.statusBar().showMessage("Mode: Équipements")
+        elif mode == "connection":
+            self.current_work_mode = WorkModes.CONNECTION
+            self.statusBar().showMessage("Mode: Connexions")
+        
+        # Émettre le signal de changement de mode
+        self.work_mode_changed.emit(self.current_work_mode)
+
+        
+        self.statusBar().showMessage(f"Mode connexion: {mode_text}")
+
+
+
+
 
 def main():
     """Point d'entrée de l'application GUI"""
