@@ -35,7 +35,7 @@ class PolylineGraphicsItem(QGraphicsPathItem):
         # Configuration
         self.setFlag(QGraphicsPathItem.ItemIsSelectable, True)
         self.setAcceptHoverEvents(True)
-        self.setZValue(1)  # Au-dessus de la grille, sous les équipements
+        self.setZValue(-1)  # Au-dessus de la grille, sous les équipements
         
         # Créer le chemin initial
         self.update_path()
@@ -175,7 +175,7 @@ class PolylineControlPoint(QGraphicsEllipseItem):
         self.setFlag(QGraphicsEllipseItem.ItemIsMovable, True)
         self.setFlag(QGraphicsEllipseItem.ItemIsSelectable, True)
         self.setAcceptHoverEvents(True)
-        self.setZValue(10)  # Au-dessus de la polyligne
+        self.setZValue(3)  # Au-dessus de la polyligne
         
         # Initialement caché
         self.setVisible(False)

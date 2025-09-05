@@ -58,6 +58,7 @@ class PortGraphicsItem(QGraphicsEllipseItem):
         (PortConnectionStatus.CONNECTED, PortVisualState.NORMAL): "#4ECDC4",    # Vert : connecté
         (PortConnectionStatus.CONNECTED, PortVisualState.HIGHLIGHTED): "#A8E6CF", # Vert clair : connecté + hover
         (PortConnectionStatus.CONNECTED, PortVisualState.SELECTED): "#88D8C0",  # Vert foncé : connecté + sélectionné
+        (PortConnectionStatus.CONNECTED, PortVisualState.PREVIEW): "#95E1D3",        # Vert clair : connecté + preview
 
         # Port réservé
         (PortConnectionStatus.RESERVED, PortVisualState.NORMAL): "#95A5A6",      # Gris : réservé
@@ -81,6 +82,9 @@ class PortGraphicsItem(QGraphicsEllipseItem):
         # Rendre le port sélectionnable mais pas déplaçable individuellement
         self.setFlag(QGraphicsItem.ItemIsSelectable, True)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges, True)
+
+        #idée: les ports en z=2, les équipements en z=1, les polylignes en z=0
+        self.setZValue(2)
         
         # Style initial
         self.update_appearance()
@@ -111,6 +115,7 @@ class PortGraphicsItem(QGraphicsEllipseItem):
 
     def set_connection_status(self, status: PortConnectionStatus):
         """Change l'état du port"""
+        print(f"Changement d'état du port {self.port_id} : {self.connection_status} -> {status}")
         if self.connection_status != status:
             self.connection_status = status
             self.update_appearance()
@@ -151,6 +156,7 @@ class PortGraphicsItem(QGraphicsEllipseItem):
             self.set_visual_state(PortVisualState.NORMAL)
 
     def mousePressEvent(self, event):
+        
         """Gestion du clic sur le port"""
         if event.button() == Qt.LeftButton:
             
@@ -160,6 +166,10 @@ class PortGraphicsItem(QGraphicsEllipseItem):
                 views = self.scene().views()
                 if views:
                     canvas = views[0]
+
+            print(f"🔍 DEBUG: Clic sur port {self.port_id}")
+            print(f"🔍 Canvas trouvé: {canvas is not None}")
+            print(f"🔍 Mode interaction: {getattr(canvas, 'interaction_mode', 'NONE')}")
             
             # Vérifier le mode d'interaction
             print(f"Mode d'interaction: {canvas.interaction_mode}")

@@ -5,7 +5,7 @@
 Zone de dessin principale avec support drag & drop d'équipements hydrauliques
 """
 
-from PyQt5.QtWidgets import (QGraphicsView, QGraphicsScene, QGraphicsItem, 
+from PyQt5.QtWidgets import (QGraphicsView, QGraphicsScene, QGraphicsItem, QGraphicsPathItem, 
                             QApplication, QMenu)
 from PyQt5.QtCore import Qt, pyqtSignal, QPointF
 from PyQt5.QtGui import QPen, QColor, QBrush, QWheelEvent, QContextMenuEvent
@@ -186,27 +186,40 @@ class DrawingCanvas(QGraphicsView):
     # GESTION DE LA SOURIS
     # =============================================================================
     def mousePressEvent(self, event):
-        """Gestion des clics de souris - MISE À JOUR pour polylignes"""
+        """Gestion des clics avec détection prioritaire des ports"""
         
         if self.interaction_mode == "create_polyline" and self.is_creating_polyline:
             if event.button() == Qt.LeftButton:
-                # Ajouter un point intermédiaire
+                
+                # ⚠️ CORRECTION: Chercher spécifiquement un port
                 scene_pos = self.mapToScene(event.pos())
+                items_at_pos = self.scene.items(scene_pos)
                 
-                # Appliquer les contraintes orthogonales
-                constrained_pos = self.apply_orthogonal_constraint(scene_pos)
+                # Filtrer pour ne garder que les ports
+                port_item = None
+                for item in items_at_pos:
+                    if isinstance(item, PortGraphicsItem):
+                        port_item = item
+                        break
                 
-                self.add_polyline_point(constrained_pos)
-                event.accept()
-                return
+                if port_item:
+                    # Clic sur un port - terminer la polyligne
+                    print(f"🎯 Port détecté: {port_item.port_id}")
+                    self.handle_port_click_for_polyline(port_item)
+                    event.accept()
+                    return
+                else:
+                    # Pas de port - ajouter un point intermédiaire
+                    constrained_pos = self.apply_orthogonal_constraint(scene_pos)
+                    self.add_polyline_point(constrained_pos)
+                    event.accept()
+                    return
             
             elif event.button() == Qt.RightButton:
-                # Annuler la création
                 self.cancel_polyline_creation()
                 event.accept()
                 return
-        
-        # Gestion normale
+
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
@@ -264,6 +277,10 @@ class DrawingCanvas(QGraphicsView):
             
             # Créer la polyligne de prévisualisation
             self.current_polyline = PolylineGraphicsItem([start_pos, start_pos])
+            self.current_polyline.setFlag(QGraphicsPathItem.ItemIsSelectable, False)
+            self.current_polyline.setAcceptHoverEvents(False)
+            self.current_polyline.setZValue(-10)  # Très en arrière-plan
+
             self.scene.addItem(self.current_polyline)
             
             # Activer le mode création
@@ -346,6 +363,7 @@ class DrawingCanvas(QGraphicsView):
         # Supprimer la polyligne de prévisualisation
         if self.current_polyline:
             self.scene.removeItem(self.current_polyline)
+            self.current_polyline = None
         
         # Créer la polyligne finale
         final_polyline = PolylineGraphicsItem(
@@ -353,6 +371,7 @@ class DrawingCanvas(QGraphicsView):
             self.start_port, 
             end_port
         )
+        
         self.scene.addItem(final_polyline)
         self.polylines.append(final_polyline)
         
@@ -381,6 +400,11 @@ class DrawingCanvas(QGraphicsView):
 
     def cancel_polyline_creation(self):
         """Annule la création de polyligne - MISE À JOUR"""
+
+        # ⚠️ GUARD: Ne rien faire si pas de création en cours
+        if not self.is_creating_polyline and not self.start_port:
+            print("🔍 cancel_polyline_creation appelé mais pas de création en cours")
+            return
         
         # Libérer le port de départ
         if self.start_port:
@@ -863,7 +887,7 @@ class DrawingCanvas(QGraphicsView):
             self.polyline_points = []
             '''
     
-def cancel_polyline_creation(self):
+'''def cancel_polyline_creation(self):
     """Annule la création de polyligne en cours - VERSION MISE À JOUR"""
     
     # Libérer le port de départ s'il était réservé
@@ -882,7 +906,7 @@ def cancel_polyline_creation(self):
     
     self.polyline_points = []
     self.start_port = None
-    print("❌ Création de polyligne annulée")
+    print("❌ Création de polyligne annulée")'''
 
 # =============================================================================
 # EXEMPLE D'UTILISATION DANS MAIN_WINDOW
