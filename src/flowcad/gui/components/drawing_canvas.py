@@ -14,7 +14,9 @@ from typing import Dict, List, Optional, Tuple
 
 # Import de la nouvelle classe graphique
 from ..graphics.equipment_graphics import (EquipmentGraphicsItem, PortGraphicsItem, 
-                                        PortStatus, EquipmentGraphicsFactory)
+                                        PortConnectionStatus, PortVisualState, EquipmentGraphicsFactory)
+
+from ..graphics.polyline_graphics import (PolylineGraphicsItem, PolylineControlPoint, create_polyline_from_ports)
 
 class DrawingCanvas(QGraphicsView):
     """Zone de dessin principale pour FlowCAD"""
@@ -43,7 +45,17 @@ class DrawingCanvas(QGraphicsView):
         self.equipment_loader = None  # Sera défini par la main_window
         
         # Mode d'interaction
-        self.interaction_mode = "select"  # "select", "connect", "draw"
+        self.interaction_mode = "select"  # "select", "create_polyline", "draw"
+    
+        # Variables pour la création de polylignes
+        self.current_polyline = None  # Polyligne en cours de création
+        self.polyline_points = []     # Points de la polyligne en cours
+        self.start_port = None        # Port de départ
+        self.preview_line = None      # Ligne de prévisualisation
+        self.is_creating_polyline = False  # Flag de création active
+
+        # Liste des polylignes créées
+        self.polylines: List[PolylineGraphicsItem] = []
         
     def setup_view(self):
         """Configure la vue graphique"""
@@ -169,6 +181,241 @@ class DrawingCanvas(QGraphicsView):
         aligned_x = round(pos.x() / grid_size) * grid_size
         aligned_y = round(pos.y() / grid_size) * grid_size
         return QPointF(aligned_x, aligned_y)
+    
+    # =============================================================================
+    # GESTION DE LA SOURIS
+    # =============================================================================
+    def mousePressEvent(self, event):
+        """Gestion des clics de souris - MISE À JOUR pour polylignes"""
+        
+        if self.interaction_mode == "create_polyline" and self.is_creating_polyline:
+            if event.button() == Qt.LeftButton:
+                # Ajouter un point intermédiaire
+                scene_pos = self.mapToScene(event.pos())
+                
+                # Appliquer les contraintes orthogonales
+                constrained_pos = self.apply_orthogonal_constraint(scene_pos)
+                
+                self.add_polyline_point(constrained_pos)
+                event.accept()
+                return
+            
+            elif event.button() == Qt.RightButton:
+                # Annuler la création
+                self.cancel_polyline_creation()
+                event.accept()
+                return
+        
+        # Gestion normale
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        """Mouvement de souris pour prévisualisation"""
+        
+        if self.interaction_mode == "create_polyline" and self.is_creating_polyline:
+            scene_pos = self.mapToScene(event.pos())
+            
+            # Appliquer les contraintes orthogonales
+            constrained_pos = self.apply_orthogonal_constraint(scene_pos)
+            
+            # Mettre à jour la prévisualisation
+            self.update_polyline_preview(constrained_pos)
+            event.accept()
+            return
+        
+        super().mouseMoveEvent(event)
+
+    def apply_orthogonal_constraint(self, pos: QPointF) -> QPointF:
+        """Applique les contraintes orthogonales (mouvement H ou V uniquement)"""
+        
+        if not self.polyline_points:
+            return pos
+        
+        last_point = self.polyline_points[-1]
+        
+        # Calculer les distances horizontale et verticale
+        dx = abs(pos.x() - last_point.x())
+        dy = abs(pos.y() - last_point.y())
+        
+        # Garder la direction dominante
+        if dx > dy:
+            # Mouvement horizontal dominant
+            return QPointF(pos.x(), last_point.y())
+        else:
+            # Mouvement vertical dominant
+            return QPointF(last_point.x(), pos.y())
+        
+    def handle_port_click_for_polyline(self, port):
+        """Gère les clics sur ports - MISE À JOUR avec contraintes"""
+        print
+        if not self.start_port:
+            # Premier clic - démarrer la polyligne
+            if not port.can_connect():
+                print(f"❌ Port {port.port_id} ne peut pas être utilisé comme point de départ")
+                return
+            
+            self.start_port = port
+            port.set_connection_status(PortConnectionStatus.RESERVED)
+            port.set_visual_state(PortVisualState.SELECTED)
+            
+            # Position de départ
+            start_pos = port.scenePos()
+            self.polyline_points = [start_pos]
+            
+            # Créer la polyligne de prévisualisation
+            self.current_polyline = PolylineGraphicsItem([start_pos, start_pos])
+            self.scene.addItem(self.current_polyline)
+            
+            # Activer le mode création
+            self.is_creating_polyline = True
+            
+            print(f"🚀 Début de polyligne depuis {port.port_id}")
+            print("   💡 Clic gauche = ajouter point, Clic droit = annuler")
+            
+            # Mettre à jour le statut
+            if hasattr(self.parent(), 'statusBar'):
+                self.parent().statusBar().showMessage(
+                    "Création polyligne: Clic gauche = point, clic droit = annuler, clic sur port = terminer"
+                )
+            
+        else:
+            # Clic sur un port pour terminer
+            if port == self.start_port:
+                print("❌ Ne peut pas connecter un port à lui-même")
+                return
+            
+            if not port.can_connect():
+                print(f"❌ Port {port.port_id} ne peut pas être utilisé comme point d'arrivée")
+                return
+            
+            # Ajouter le point final
+            end_pos = port.scenePos()
+            
+            # Appliquer contrainte orthogonale pour le dernier segment
+            if len(self.polyline_points) > 1:
+                constrained_end = self.apply_orthogonal_constraint(end_pos)
+                self.polyline_points.append(constrained_end)
+            
+            self.polyline_points.append(end_pos)
+            
+            print(f"🏁 Fin de polyligne sur {port.port_id}")
+            
+            # Finaliser la polyligne
+            self.finalize_polyline(port)
+
+    def add_polyline_point(self, pos: QPointF):
+        """Ajoute un point intermédiaire à la polyligne en cours"""
+        
+        if not self.is_creating_polyline:
+            return
+        
+        self.polyline_points.append(pos)
+        
+        # Mettre à jour la polyligne de prévisualisation
+        if self.current_polyline:
+            self.current_polyline.points = self.polyline_points.copy()
+            # Ajouter un point temporaire pour la suite
+            self.current_polyline.points.append(pos)
+            self.current_polyline.update_path()
+        
+        print(f"📍 Point ajouté: ({pos.x():.1f}, {pos.y():.1f})")
+        print(f"   Total points: {len(self.polyline_points)}")
+
+    def update_polyline_preview(self, pos: QPointF):
+        """Met à jour la prévisualisation de la polyligne"""
+        
+        if not self.current_polyline or not self.is_creating_polyline:
+            return
+        
+        # Copier les points existants
+        preview_points = self.polyline_points.copy()
+        preview_points.append(pos)
+        
+        # Mettre à jour la polyligne de prévisualisation
+        self.current_polyline.points = preview_points
+        self.current_polyline.update_path()
+
+    def finalize_polyline(self, end_port):
+        """Finalise la création de la polyligne"""
+        
+        if len(self.polyline_points) < 2:
+            print("❌ Pas assez de points pour créer une polyligne")
+            self.cancel_polyline_creation()
+            return
+        
+        # Supprimer la polyligne de prévisualisation
+        if self.current_polyline:
+            self.scene.removeItem(self.current_polyline)
+        
+        # Créer la polyligne finale
+        final_polyline = PolylineGraphicsItem(
+            self.polyline_points, 
+            self.start_port, 
+            end_port
+        )
+        self.scene.addItem(final_polyline)
+        self.polylines.append(final_polyline)
+        
+        # Marquer les ports comme connectés
+        self.start_port.set_connection_status(PortConnectionStatus.CONNECTED)
+        end_port.set_connection_status(PortConnectionStatus.CONNECTED)
+        
+        # États visuels normaux
+        self.start_port.set_visual_state(PortVisualState.NORMAL)
+        end_port.set_visual_state(PortVisualState.NORMAL)
+        
+        print(f"✅ Polyligne créée avec {len(self.polyline_points)} points")
+        
+        # Réinitialiser
+        self.reset_polyline_creation()
+        
+        # Retourner au mode sélection
+        self.set_interaction_mode("select")
+
+    def reset_polyline_creation(self):
+        """Remet à zéro les variables de création"""
+        self.current_polyline = None
+        self.polyline_points = []
+        self.start_port = None
+        self.is_creating_polyline = False
+
+    def cancel_polyline_creation(self):
+        """Annule la création de polyligne - MISE À JOUR"""
+        
+        # Libérer le port de départ
+        if self.start_port:
+            self.start_port.set_connection_status(PortConnectionStatus.DISCONNECTED)
+            self.start_port.set_visual_state(PortVisualState.NORMAL)
+        
+        # Supprimer la polyligne de prévisualisation
+        if self.current_polyline:
+            self.scene.removeItem(self.current_polyline)
+        
+        # Réinitialiser
+        self.reset_polyline_creation()
+        
+        print("❌ Création de polyligne annulée")
+        
+        # Retourner au mode sélection
+        self.set_interaction_mode("select")
+
+    def remove_polyline(self, polyline: PolylineGraphicsItem):
+        """Supprime une polyligne et libère ses ports"""
+        
+        # Libérer les ports connectés
+        if polyline.start_port:
+            polyline.start_port.set_connection_status(PortConnectionStatus.FREE)
+        if polyline.end_port:
+            polyline.end_port.set_connection_status(PortConnectionStatus.FREE)
+        
+        # Supprimer de la scène
+        self.scene.removeItem(polyline)
+        
+        # Supprimer de notre liste
+        if polyline in self.polylines:
+            self.polylines.remove(polyline)
+        
+        print("🗑️ Polyligne supprimée")
     
     # =============================================================================
     # GESTION DES ÉQUIPEMENTS
@@ -528,6 +775,114 @@ class DrawingCanvas(QGraphicsView):
         print(f"🔄 {len(selected_equipments)} équipement(s) distribués")
         # Mettre à jour l'affichage
         self.update()
+
+    #=========================================================================
+    #fonctions liées aux connections
+
+    def set_interaction_mode(self, mode):
+        """Change le mode d'interaction du canvas"""
+        print(f"🎯 Mode d'interaction changé vers: {mode}")
+        
+        old_mode = self.interaction_mode
+        self.interaction_mode = mode
+        
+        # Nettoyer l'ancien mode
+        if old_mode == "create_polyline":
+            self.cancel_polyline_creation()
+        
+        # Configurer le nouveau mode
+        if mode == "create_polyline":
+            self.setCursor(Qt.CrossCursor)
+            # Changer la couleur des ports libres pour les rendre plus visibles
+            self.highlight_available_ports(True)
+        else:
+            self.setCursor(Qt.ArrowCursor)
+            self.highlight_available_ports(False)
+
+    def highlight_available_ports(self, highlight=True):
+        """Met en évidence les ports disponibles pour connexion"""
+        for equipment_item in self.equipment_items.values():
+            for port in equipment_item.get_all_ports():
+                if port.can_connect():  # Utilise la nouvelle méthode
+                    if highlight:
+                        port.set_visual_state(PortVisualState.PREVIEW)
+                    else:
+                        port.set_visual_state(PortVisualState.NORMAL)
+
+    
+    '''
+    def handle_port_click_for_polyline(self, port):
+        """Gère les clics sur ports en mode création de polyligne - VERSION MISE À JOUR"""
+        
+        if not self.start_port:
+            # Premier clic - démarrer la polyligne
+            if not port.can_connect():
+                print(f"❌ Port {port.port_id} ne peut pas être utilisé comme point de départ")
+                return
+            
+            self.start_port = port
+            port.set_connection_status(PortConnectionStatus.RESERVED)  # Réserver temporairement
+            port.set_visual_state(PortVisualState.SELECTED)
+            
+            # Position de départ en coordonnées de scène
+            start_pos = port.scenePos()
+            self.polyline_points = [start_pos]
+            
+            print(f"🚀 Début de polyligne depuis {port.port_id}")
+            print(f"   Position: {start_pos.x():.1f}, {start_pos.y():.1f}")
+            
+        else:
+            # Deuxième clic (ou plus) - terminer la polyligne
+            if port == self.start_port:
+                print("❌ Ne peut pas connecter un port à lui-même")
+                return
+            
+            if not port.can_connect():
+                print(f"❌ Port {port.port_id} ne peut pas être utilisé comme point d'arrivée")
+                return
+            
+            end_pos = port.scenePos()
+            self.polyline_points.append(end_pos)
+            
+            print(f"🏁 Fin de polyligne sur {port.port_id}")
+            print(f"   Position: {end_pos.x():.1f}, {end_pos.y():.1f}")
+            
+            # Créer la polyligne finale
+            #self.create_final_polyline()
+            
+            # Marquer les ports comme connectés
+            self.start_port.set_connection_status(PortConnectionStatus.CONNECTED)
+            port.set_connection_status(PortConnectionStatus.CONNECTED)
+            
+            # États visuels normaux
+            self.start_port.set_visual_state(PortVisualState.NORMAL)
+            port.set_visual_state(PortVisualState.NORMAL)
+            
+            # Réinitialiser
+            self.start_port = None
+            self.polyline_points = []
+            '''
+    
+def cancel_polyline_creation(self):
+    """Annule la création de polyligne en cours - VERSION MISE À JOUR"""
+    
+    # Libérer le port de départ s'il était réservé
+    if self.start_port:
+        self.start_port.set_connection_status(PortConnectionStatus.FREE)
+        self.start_port.set_visual_state(PortVisualState.NORMAL)
+    
+    # Nettoyer les éléments graphiques
+    if self.current_polyline:
+        self.scene.removeItem(self.current_polyline)
+        self.current_polyline = None
+    
+    if self.preview_line:
+        self.scene.removeItem(self.preview_line)
+        self.preview_line = None
+    
+    self.polyline_points = []
+    self.start_port = None
+    print("❌ Création de polyligne annulée")
 
 # =============================================================================
 # EXEMPLE D'UTILISATION DANS MAIN_WINDOW

@@ -19,17 +19,25 @@ import xml.etree.ElementTree as ET
 
 from numpy import cos, sin, radians
 
+from .polyline_graphics import PolylineGraphicsItem
+
 # =============================================================================
 # ÉNUMÉRATION POUR L'ÉTAT DES PORTS
 # =============================================================================
 
-class PortStatus(Enum):
+class PortVisualState(Enum):
     """États possibles d'un port hydraulique"""
-    DISCONNECTED = "disconnected"    # Port libre
-    CONNECTED = "connected"          # Port connecté
+    NORMAL = "normal"                # Apparence normale
     HIGHLIGHTED = "highlighted"      # Port en surbrillance (hover)
     SELECTED = "selected"           # Port sélectionné
-    ERROR = "error"                 # Port en erreur
+    PREVIEW = "preview"           # Port en mode preview (ex: lors de la création de polyligne)
+
+class PortConnectionStatus(Enum):
+    """États possibles d'une connexion entre ports"""
+    DISCONNECTED = "disconnected"    # Pas de connexion
+    CONNECTED = "connected"          # Connexion établie
+    PENDING = "pending"              # Connexion en attente
+    RESERVED = "reserved"            # Connexion réservée
 
 # =============================================================================
 # CLASSE POUR UN PORT GRAPHIQUE
@@ -40,11 +48,23 @@ class PortGraphicsItem(QGraphicsEllipseItem):
     
     # Couleurs selon l'état du port
     PORT_COLORS = {
-        PortStatus.DISCONNECTED: "#FF6B6B",     # Rouge : libre
-        PortStatus.CONNECTED: "#4ECDC4",        # Vert : connecté
-        PortStatus.HIGHLIGHTED: "#FFE066",      # Jaune : survol
-        PortStatus.SELECTED: "#FF9FF3",         # Rose : sélectionné
-        PortStatus.ERROR: "#FF4757"             # Rouge foncé : erreur
+        # Port libre
+        (PortConnectionStatus.DISCONNECTED, PortVisualState.NORMAL): "#FF6B6B",         # Rouge : libre
+        (PortConnectionStatus.DISCONNECTED, PortVisualState.HIGHLIGHTED): "#FFE066",    # Jaune : libre + hover
+        (PortConnectionStatus.DISCONNECTED, PortVisualState.SELECTED): "#FF9FF3",       # Rose : libre + sélectionné
+        (PortConnectionStatus.DISCONNECTED, PortVisualState.PREVIEW): "#95E1D3",        # Vert clair : libre + preview
+
+        # Port connecté
+        (PortConnectionStatus.CONNECTED, PortVisualState.NORMAL): "#4ECDC4",    # Vert : connecté
+        (PortConnectionStatus.CONNECTED, PortVisualState.HIGHLIGHTED): "#A8E6CF", # Vert clair : connecté + hover
+        (PortConnectionStatus.CONNECTED, PortVisualState.SELECTED): "#88D8C0",  # Vert foncé : connecté + sélectionné
+
+        # Port réservé
+        (PortConnectionStatus.RESERVED, PortVisualState.NORMAL): "#95A5A6",      # Gris : réservé
+        (PortConnectionStatus.RESERVED, PortVisualState.HIGHLIGHTED): "#BDC3C7", # Gris clair : réservé + hover
+        (PortConnectionStatus.RESERVED, PortVisualState.SELECTED): "#FF9FF3",       # Rose : réservé + sélectionné
+        (PortConnectionStatus.RESERVED, PortVisualState.PREVIEW): "#95E1D3",        # Vert clair : réservé + preview
+
     }
     
     def __init__(self, port_id: str, parent_equipment=None):
@@ -53,7 +73,8 @@ class PortGraphicsItem(QGraphicsEllipseItem):
 
         self.port_id = port_id
         self.parent_equipment = parent_equipment
-        self.status = PortStatus.DISCONNECTED
+        self.connection_status = PortConnectionStatus.DISCONNECTED  #etat logique du port
+        self.visual_state = PortVisualState.NORMAL          #etat visuel du port
 
         self.setAcceptHoverEvents(True)
         
@@ -65,36 +86,99 @@ class PortGraphicsItem(QGraphicsEllipseItem):
         self.update_appearance()
         
         # Tooltip informatif
-        self.setToolTip(f"Port: {port_id}\n")
-    
+        self.setToolTip(f"Port: {port_id}\nStatut: {self.connection_status.value}")
+
     def update_appearance(self):
         """Met à jour l'apparence selon l'état du port"""
-        color = QColor(self.PORT_COLORS[self.status])
+
+        #couleur selon combinaison d'état visuel et de status
+        color_key = (self.connection_status, self.visual_state)
+        color = QColor(self.PORT_COLORS[color_key])
+
+        # Couleur par défaut si combinaison non trouvée
+        default_color = "#CCCCCC"
+        color_hex = self.PORT_COLORS.get(color_key, default_color)
+        color = QColor(color_hex)
         
         # Remplissage
         self.setBrush(QBrush(color))
         
         # Contour plus épais si sélectionné
-        pen_width = 3 if self.status == PortStatus.SELECTED else 2
+        pen_width = 3 if self.visual_state == PortVisualState.SELECTED else 2
         self.setPen(QPen(Qt.black, pen_width))
-    
-    def set_status(self, status: PortStatus):
+
+    #méthodes pour gérer l'état logique (connecté/déconnecté)
+
+    def set_connection_status(self, status: PortConnectionStatus):
         """Change l'état du port"""
-        if self.status != status:
-            self.status = status
+        if self.connection_status != status:
+            self.connection_status = status
             self.update_appearance()
     
+    def is_free(self) -> bool:
+        """vérifie si le port est libre"""
+        return self.connection_status == PortConnectionStatus.DISCONNECTED
+
+    def is_connected(self) -> bool:
+        """vérifie si le port est connecté"""
+        return self.connection_status == PortConnectionStatus.CONNECTED
+    
+    def can_connect(self) -> bool:
+        """Vérifie si on peut connecter ce port"""
+        return self.connection_status in [PortConnectionStatus.DISCONNECTED]
+
+    #méthodes pour gérer l'état visuel----------------------------------
+
+    def set_visual_state(self, state: PortVisualState):
+        """Change l'état visuel du port"""
+        if self.visual_state != state:
+            self.visual_state = state
+            self.update_appearance()
+
+    def highlight(self, enable=True):
+        """Met en surbrillance ou retire la surbrillance"""
+        if enable and self.visual_state == PortVisualState.NORMAL:
+            self.set_visual_state(PortVisualState.HIGHLIGHTED)
+        elif not enable and self.visual_state == PortVisualState.HIGHLIGHTED:
+            self.set_visual_state(PortVisualState.NORMAL)
+
+    def select(self, enable=True):
+        """Sélectionne ou désélectionne visuellement"""
+        if enable:
+            self.set_visual_state(PortVisualState.SELECTED)
+        else:
+            # Retourner à l'état normal ou highlighted selon le contexte
+            self.set_visual_state(PortVisualState.NORMAL)
+
     def mousePressEvent(self, event):
         """Gestion du clic sur le port"""
         if event.button() == Qt.LeftButton:
+            
+            
+            # Récupérer le canvas parent
+            canvas = None
+            if self.scene() and hasattr(self.scene(), 'views'):
+                views = self.scene().views()
+                if views:
+                    canvas = views[0]
+            
+            # Vérifier le mode d'interaction
+            print(f"Mode d'interaction: {canvas.interaction_mode}")
+            if canvas and hasattr(canvas, 'interaction_mode'):
+                if canvas.interaction_mode == "create_polyline":
+                    # Mode création de polyligne
+                    self.handle_polyline_click(canvas)
+                    event.accept()
+                    return
+
             print(f"Port cliqué: {self.port_id} de l'équipement {self.parent_equipment.equipment_id if self.parent_equipment else 'N/A'}")
-            
+
             # Changer l'état pour montrer la sélection
-            if self.status != PortStatus.SELECTED:
-                self.set_status(PortStatus.SELECTED)
+            if self.visual_state != PortVisualState.SELECTED:
+                self.set_visual_state(PortVisualState.SELECTED)
             else:
-                self.set_status(PortStatus.DISCONNECTED)
-            
+                self.set_visual_state(PortVisualState.NORMAL)
+
             # Empêcher la propagation à l'équipement parent
             event.accept()
         else:
@@ -102,15 +186,28 @@ class PortGraphicsItem(QGraphicsEllipseItem):
     
     def hoverEnterEvent(self, event):
         """Survol du port"""
-        if self.status == PortStatus.DISCONNECTED:
-            self.set_status(PortStatus.HIGHLIGHTED)
+        if self.visual_state == PortVisualState.NORMAL:
+            self.set_visual_state(PortVisualState.HIGHLIGHTED)
         super().hoverEnterEvent(event)
     
     def hoverLeaveEvent(self, event):
         """Fin de survol du port"""
-        if self.status == PortStatus.HIGHLIGHTED:
-            self.set_status(PortStatus.DISCONNECTED)
+        if self.visual_state == PortVisualState.HIGHLIGHTED:
+            self.set_visual_state(PortVisualState.NORMAL)
         super().hoverLeaveEvent(event)
+
+    def handle_polyline_click(self, canvas):
+        """Gère les clics sur port en mode création de polyligne"""
+        print(f"🔌 Clic sur port {self.port_id} en mode polyligne")
+        
+        # Vérifier si le port peut être connecté
+        if not self.can_connect():
+            print(f"❌ Port {self.port_id} ne peut pas être connecté (statut: {self.connection_status.value})")
+            return
+        
+        # Appeler la méthode du canvas pour gérer la polyligne
+        if hasattr(canvas, 'handle_port_click_for_polyline'):
+            canvas.handle_port_click_for_polyline(self)
 
 # =============================================================================
 # CLASSE PRINCIPALE POUR UN ÉQUIPEMENT GRAPHIQUE
@@ -343,12 +440,12 @@ class EquipmentGraphicsItem(QGraphicsItem):
     def mousePressEvent(self, event):
         """Gestion des clics sur l'équipement"""
         
-        # Vérifier si le clic est sur un port
+        """# Vérifier si le clic est sur un port
         for port in self.ports.values():
             if port.contains(port.mapFromParent(event.pos())):
                 # Le clic est sur un port, laisser le port le gérer
                 port.mousePressEvent(event)
-                return
+                return"""
         
         # Le clic est sur l'équipement lui-même
         print(f"Équipement cliqué: {self.equipment_id}")
@@ -366,13 +463,21 @@ class EquipmentGraphicsItem(QGraphicsItem):
         """Marque un port comme connecté"""
         port = self.get_port(port_id)
         if port:
-            port.set_status(PortStatus.CONNECTED)
+            port.set_connection_status(PortConnectionStatus.CONNECTED)
     
     def disconnect_port(self, port_id: str):
         """Marque un port comme déconnecté"""
         port = self.get_port(port_id)
         if port:
-            port.set_status(PortStatus.DISCONNECTED)
+            port.set_connection_status(PortConnectionStatus.DISCONNECTED)
+
+    def get_free_ports(self) -> List[PortGraphicsItem]:
+        """Récupère tous les ports libres"""
+        return [port for port in self.ports.values() if port.is_free()]
+
+    def get_connected_ports(self) -> List[PortGraphicsItem]:
+        """Récupère tous les ports connectés"""
+        return [port for port in self.ports.values() if port.is_connected()]
 
     def itemChange(self, change, value):
         """Réagit aux changements d'état de l'item"""

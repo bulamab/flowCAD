@@ -12,6 +12,7 @@ from .components.ribbon_toolbar import RibbonToolbar
 from .components.Left_panel import LeftPanel
 from .components.drawing_canvas import DrawingCanvas
 from ..config.equipment.equipment_loader import EquipmentLoader
+from .components.mode_panels.connection_panel import ConnectionPanel
 
 class WorkModes(Enum):
     EQUIPMENT = "Équipement"
@@ -34,7 +35,7 @@ class FlowCADMainWindow(QMainWindow):
 
         # Créer le canvas
         self.drawing_canvas = DrawingCanvas()
-        
+
         # Connecter votre equipment_loader
         self.drawing_canvas.set_equipment_loader(self.equipment_loader)
 
@@ -73,6 +74,7 @@ class FlowCADMainWindow(QMainWindow):
         # Panneau équipement à gauche
         self.Left_panel = LeftPanel(self)
         panels_layout.addWidget(self.Left_panel)
+        self.Left_panel.get_connection_panel().connection_mode_changed.connect(self.on_connection_mode_changed)
         
         # Zone de dessin au centre
         #self.drawing_canvas = DrawingCanvas(self)
@@ -83,7 +85,9 @@ class FlowCADMainWindow(QMainWindow):
 
         #setup de la barre de status
         self.statusBar().showMessage("Prêt")
-        
+
+    #------------------ fonctions liés aux changements des équipements ---------------------------
+
     def on_equipment_dropped(self, equipment_id, equipment_def, position):
         print(f"Nouvel équipement: {equipment_id}")
         #self.update_status_message(f"Équipement ajouté: {equipment_def.get('display_name')}")
@@ -112,6 +116,8 @@ class FlowCADMainWindow(QMainWindow):
         print(f"Distribution de l'équipement sélectionné: {direction}")
         self.drawing_canvas.distribute_selected_equipment(direction)
 
+    #------------- fonction liée au changement de mode Equipement/Connexion
+
     def on_panel_mode_changed(self, mode):
         """Callback quand le mode du panneau gauche change"""
         print(f"🔄 Mode du panneau changé vers: {mode}")
@@ -128,6 +134,21 @@ class FlowCADMainWindow(QMainWindow):
 
         
         self.statusBar().showMessage(f"Mode connexion: {mode_text}")
+
+    #------------ fonctions liées au mode connection ------------------------------
+
+    def on_connection_mode_changed(self, connection_mode):
+        """Callback quand le mode de connexion change"""
+        print(f"🔌 Mode de connexion changé vers: {connection_mode}")
+        
+        if connection_mode == "create":
+            # Activer le mode création de polyligne sur le canvas
+            self.drawing_canvas.set_interaction_mode("create_polyline")
+            self.statusBar().showMessage("Mode: Création de tuyau - Cliquez sur un port pour commencer")
+        else:
+            # Retour au mode normal
+            self.drawing_canvas.set_interaction_mode("select")
+            self.statusBar().showMessage("Mode: Sélection")
 
 
 
