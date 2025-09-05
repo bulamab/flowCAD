@@ -110,10 +110,10 @@ class PolylineGraphicsItem(QGraphicsPathItem):
     def disconnect_ports(self):
         """Déconnecte les ports associés à cette polyligne"""
         if self.start_port:
-            self.start_port.set_connection_status(PortConnectionStatus.FREE)
+            self.start_port.set_connection_status(PortConnectionStatus.DISCONNECTED)
         if self.end_port:
-            self.end_port.set_connection_status(PortConnectionStatus.FREE)
-    
+            self.end_port.set_connection_status(PortConnectionStatus.DISCONNECTED)
+
     # =============================================================================
     # GESTION DES ÉVÉNEMENTS
     # =============================================================================

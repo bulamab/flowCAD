@@ -154,7 +154,6 @@ class PortGraphicsItem(QGraphicsEllipseItem):
         """Gestion du clic sur le port"""
         if event.button() == Qt.LeftButton:
             
-            
             # Récupérer le canvas parent
             canvas = None
             if self.scene() and hasattr(self.scene(), 'views'):
