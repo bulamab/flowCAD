@@ -7,9 +7,9 @@ Classes graphiques pour représenter les équipements hydrauliques sur le canvas
 
 from logging import root
 from PyQt5.QtWidgets import QGraphicsItem, QGraphicsTextItem, QGraphicsEllipseItem
-from PyQt5.QtCore import Qt, QRectF, pyqtSignal, QObject
+from PyQt5.QtCore import Qt, QRectF, pyqtSignal, QObject, QByteArray, QPointF
 from PyQt5.QtGui import QColor, QBrush, QPen, QPainter, QTransform
-from PyQt5.QtSvg import QGraphicsSvgItem
+from PyQt5.QtSvg import QGraphicsSvgItem, QSvgRenderer 
 import os
 from enum import Enum
 from typing import Dict, List, Optional
@@ -19,7 +19,9 @@ import xml.etree.ElementTree as ET
 
 from numpy import cos, sin, radians
 
-from .polyline_graphics import PolylineGraphicsItem
+from .pipe_style_manager import pipe_style_manager
+
+#from .polyline_graphics import PolylineGraphicsItem
 
 # =============================================================================
 # ÉNUMÉRATION POUR L'ÉTAT DES PORTS
@@ -67,6 +69,9 @@ class PortGraphicsItem(QGraphicsEllipseItem):
         (PortConnectionStatus.RESERVED, PortVisualState.PREVIEW): "#95E1D3",        # Vert clair : réservé + preview
 
     }
+
+    # Variable de contrôle pour l'affichage des ports connectés
+    SHOW_CONNECTED_PORTS = False  # Par défaut, cacher les ports connectés
     
     def __init__(self, port_id: str, parent_equipment=None):
         # Cercle de rayon 12 pixels centré sur l'origine
@@ -76,6 +81,8 @@ class PortGraphicsItem(QGraphicsEllipseItem):
         self.parent_equipment = parent_equipment
         self.connection_status = PortConnectionStatus.DISCONNECTED  #etat logique du port
         self.visual_state = PortVisualState.NORMAL          #etat visuel du port
+
+        self.force_visible = False  # Pour forcer l'affichage même si connecté
 
         self.setAcceptHoverEvents(True)
         
@@ -88,6 +95,8 @@ class PortGraphicsItem(QGraphicsEllipseItem):
         
         # Style initial
         self.update_appearance()
+        #pour la visibilité du port
+        self.update_visibility()
         
         # Tooltip informatif
         self.setToolTip(f"Port: {port_id}\nStatut: {self.connection_status.value}")
@@ -113,13 +122,45 @@ class PortGraphicsItem(QGraphicsEllipseItem):
 
     #méthodes pour gérer l'état logique (connecté/déconnecté)
 
+    def update_tooltip(self):
+        """Met à jour le tooltip avec les informations actuelles du port"""
+        # Emoji selon le statut
+        status_emoji = {
+            PortConnectionStatus.DISCONNECTED: "🔴",
+            PortConnectionStatus.CONNECTED: "🟢", 
+            PortConnectionStatus.PENDING: "🟡",
+            PortConnectionStatus.RESERVED: "🟠"
+        }
+        
+        emoji = status_emoji.get(self.connection_status, "⚪")
+        tooltip_text = f"{emoji} Port: {self.port_id}\nStatut: {self.connection_status.value}"
+        
+        # Ajouter des infos supplémentaires si connecté
+        if self.connection_status == PortConnectionStatus.CONNECTED:
+            tooltip_text += "\n💧 Connecté"
+        elif self.connection_status == PortConnectionStatus.DISCONNECTED:
+            tooltip_text += "\n🔓 Libre"
+            
+        # Ajouter info de visibilité si connecté
+        if self.connection_status == PortConnectionStatus.CONNECTED:
+            if not self.isVisible():
+                tooltip_text += "\n👻 (Caché car connecté)"
+            else:
+                tooltip_text += "\n💧 Connecté"
+        elif self.connection_status == PortConnectionStatus.DISCONNECTED:
+            tooltip_text += "\n🔓 Libre"
+            
+        self.setToolTip(tooltip_text)
+
     def set_connection_status(self, status: PortConnectionStatus):
         """Change l'état du port"""
         print(f"Changement d'état du port {self.port_id} : {self.connection_status} -> {status}")
         if self.connection_status != status:
             self.connection_status = status
-            self.update_appearance()
-    
+            self.update_appearance()    # Met à jour l'apparence du port
+            self.update_tooltip()       # Met à jour le tooltip du port
+            self.update_visibility()    # Met à jour la visibilité du port
+
     def is_free(self) -> bool:
         """vérifie si le port est libre"""
         return self.connection_status == PortConnectionStatus.DISCONNECTED
@@ -134,11 +175,39 @@ class PortGraphicsItem(QGraphicsEllipseItem):
 
     #méthodes pour gérer l'état visuel----------------------------------
 
+    # Met à jour la visibilité du port selon son statut de connexion
+    def update_visibility(self):
+        """Met à jour la visibilité du port selon son statut de connexion"""
+        
+        # Règles de visibilité :
+        # 1. Si force_visible = True → toujours visible
+        # 2. Si SHOW_CONNECTED_PORTS = True → toujours visible  
+        # 3. Si port connecté et SHOW_CONNECTED_PORTS = False → invisible
+        # 4. Sinon → visible
+        
+        should_be_visible = (
+            self.force_visible or 
+            PortGraphicsItem.SHOW_CONNECTED_PORTS or 
+            self.connection_status != PortConnectionStatus.CONNECTED
+        )
+        
+        if should_be_visible != self.isVisible():
+            self.setVisible(should_be_visible)
+            print(f"👻 Port {self.port_id} {'visible' if should_be_visible else 'invisible'}")
+
+    def set_force_visible(self, visible: bool):
+        """Force l'affichage du port (même si connecté)"""
+        if self.force_visible != visible:
+            self.force_visible = visible
+            self.update_visibility()
+            print(f"🔧 Port {self.port_id} force_visible = {visible}")
+
     def set_visual_state(self, state: PortVisualState):
         """Change l'état visuel du port"""
         if self.visual_state != state:
             self.visual_state = state
             self.update_appearance()
+            self.update_tooltip()
 
     def highlight(self, enable=True):
         """Met en surbrillance ou retire la surbrillance"""
@@ -218,13 +287,39 @@ class PortGraphicsItem(QGraphicsEllipseItem):
         if hasattr(canvas, 'handle_port_click_for_polyline'):
             canvas.handle_port_click_for_polyline(self)
 
+    # ✅ MÉTHODES DE CLASSE pour contrôler l'affichage global
+    @classmethod
+    def set_show_connected_ports(cls, show: bool):
+        """Active/désactive l'affichage des ports connectés globalement"""
+        if cls.SHOW_CONNECTED_PORTS != show:
+            cls.SHOW_CONNECTED_PORTS = show
+            print(f"🌍 Affichage global des ports connectés: {'ON' if show else 'OFF'}")
+            
+            # Notifier tous les ports existants de mettre à jour leur visibilité
+            # (nécessite une référence aux ports existants)
+            cls.update_all_ports_visibility()
+
+    @classmethod  
+    def update_all_ports_visibility(cls):
+        """Met à jour la visibilité de tous les ports existants"""
+        # Cette méthode sera appelée depuis le canvas qui a la liste des équipements
+        print("🔄 Mise à jour de la visibilité de tous les ports...")
+
+    @classmethod
+    def get_show_connected_ports(cls):
+        """Retourne l'état actuel de l'affichage des ports connectés"""
+        return cls.SHOW_CONNECTED_PORTS
+
 # =============================================================================
 # CLASSE PRINCIPALE POUR UN ÉQUIPEMENT GRAPHIQUE
 # =============================================================================
 
 class EquipmentGraphicsItem(QGraphicsItem):
     """Élément graphique complet représentant un équipement hydraulique avec ses ports"""
-    
+
+    # L'échelle est définie globalement
+    EQUIPEMENT_SCALE = 2
+
     def __init__(self, equipment_id: str, equipment_def: dict, svg_path: str = None):
         super().__init__()
         
@@ -238,7 +333,11 @@ class EquipmentGraphicsItem(QGraphicsItem):
         self.rotation_angle = 0  # Angle de rotation en degrés
         self.mirror_h = False
         self.mirror_v = False
-        self.item_scale = 1.0
+        self.center = QPointF(30, 30)  # le centre, du SVG, pour les mirroirs et l'équilibre
+        self.item_scale = EquipmentGraphicsItem.EQUIPEMENT_SCALE
+
+        # État visuel actuel (pour les styles de tuyaux internes)
+        self.current_visual_state = "normal"  # "normal", "selected", "hover"
 
         # Composants graphiques
         self.svg_item: Optional[QGraphicsSvgItem] = None # Élément SVG de l'équipement
@@ -255,7 +354,10 @@ class EquipmentGraphicsItem(QGraphicsItem):
         
         # Activer la détection de survol
         self.setAcceptHoverEvents(True)
-        
+
+        # Connecter aux changements de styles
+        pipe_style_manager.styles_changed.connect(self.on_pipe_styles_changed)
+
         # Créer les composants
         self.create_components()
         self.create_ports()
@@ -263,7 +365,10 @@ class EquipmentGraphicsItem(QGraphicsItem):
         # Style de sélection personnalisé
         self.selection_pen = QPen(QColor(0, 120, 255), 2, Qt.DashLine)  # Bleu en pointillés
         self.selection_brush = QBrush(QColor(0, 120, 255, 30))  # Bleu transparent
-    
+
+        #liste des polylignes connectées
+        self.connected_polylines: List = []  # Liste des polylignes à mettre à jour
+
     def create_components(self):
         """Crée les composants visuels de base"""
         
@@ -272,16 +377,160 @@ class EquipmentGraphicsItem(QGraphicsItem):
 
             #extrait les informations du SVG
             self.ports_infos = self.read_ports_from_svg(self.svg_path)
-            self.svg_item = QGraphicsSvgItem(self.svg_path)
-            self.svg_item.setParentItem(self)
-            print(f"dimensions: {self.svg_item.boundingRect().width()} x {self.svg_item.boundingRect().height()}")
-            # Redimensionner le SVG
-            self.item_scale = min(self.width / self.svg_item.boundingRect().width(),
-                                    self.height / self.svg_item.boundingRect().height())
+
+            #creer le svg avec style
+            self.create_styled_svg_item()
+
+            #self.svg_item = QGraphicsSvgItem(self.svg_path)
+            #self.svg_item.setParentItem(self)
+            #print(f"dimensions: {self.svg_item.boundingRect().width()} x {self.svg_item.boundingRect().height()}")
+            
             self.svg_item.setScale(self.item_scale)
             #redimensionner le bounding rect pour qu'il corresponde à la taille de l'élément SVG
             self.width = self.svg_item.boundingRect().width()*self.item_scale
             self.height = self.svg_item.boundingRect().height()*self.item_scale
+            #fixer le centre du SVG
+            
+
+            self.center = self.svg_item.boundingRect().center()*self.item_scale
+            #print(f"Centre avant: {self.center}")
+
+    def create_styled_svg_item(self):
+        """Crée l'item SVG avec les styles de tuyaux appliqués"""
+
+        #print(f"scale {self.item_scale}")
+        # Obtenir le SVG modifié avec les styles de tuyaux
+        styled_svg_content = pipe_style_manager.apply_pipe_styles_to_svg(
+            self.svg_path, self.current_visual_state, self.item_scale
+        )
+
+        #cacher les ports pour qu'ils ne soient pas visibles
+        styled_svg_content=self.hide_svg_ports(styled_svg_content)
+
+        
+        if styled_svg_content:
+            # Créer le renderer SVG à partir du contenu modifié
+            svg_data = QByteArray(styled_svg_content.encode('utf-8'))
+            renderer = QSvgRenderer(svg_data)
+            
+            # Créer l'item SVG
+            from PyQt5.QtSvg import QGraphicsSvgItem
+            self.svg_item = QGraphicsSvgItem()
+            self.svg_item.setSharedRenderer(renderer)
+            self.svg_item.setParentItem(self)
+            
+            print(f"✅ SVG créé avec styles de tuyaux appliqués")
+        else:
+            # Fallback vers le SVG original
+            self.svg_item = QGraphicsSvgItem(self.svg_path)
+            self.svg_item.setParentItem(self)
+            print(f"⚠️ Utilisation du SVG original (erreur de styling)")
+
+    #Cache les ports svg. Des ports sont ajoutés sur Inkskape pour visualiser les connexions. IDéalement, ces ports ne 
+    #sont pas visible sur le dessin, mais remplacés par les ports FlowCAD
+    def hide_svg_ports(self, svg_content: str) -> str:
+        """Cache les ports SVG"""
+
+        # Parser le XML
+        root = ET.fromstring(svg_content)
+        
+        # Masquer les ports
+        for element in root.iter():
+            element_id = element.get('id', '')
+            
+            if re.search(r'Port(\d+)', element_id, re.IGNORECASE):
+                element.set('style', 'opacity:0')
+                print(f"⚠️ Port masqué: {element_id}")
+
+        svg_content = ET.tostring(root, encoding='unicode')
+        return svg_content
+
+    def update_visual_state(self, new_state: str):
+        """Met à jour l'état visuel et les styles des tuyaux internes"""
+        if self.current_visual_state != new_state:
+            old_state = self.current_visual_state
+            self.current_visual_state = new_state
+            
+            print(f"🎨 État visuel {self.equipment_id}: {old_state} → {new_state}")
+            
+            # Recréer le SVG avec les nouveaux styles
+            self.update_svg_styles()
+
+    def update_svg_styles(self):
+        """Met à jour les styles du SVG selon l'état actuel"""
+        if not self.svg_path or not self.svg_item:
+            return
+        
+        # Obtenir le SVG modifié avec les nouveaux styles
+        styled_svg_content = pipe_style_manager.apply_pipe_styles_to_svg(
+            self.svg_path, self.current_visual_state, self.item_scale
+        )
+
+        #cacher les ports pour qu'ils ne soient pas visibles
+        styled_svg_content=self.hide_svg_ports(styled_svg_content)
+        
+        if styled_svg_content:
+            # Mettre à jour le renderer
+            svg_data = QByteArray(styled_svg_content.encode('utf-8'))
+            renderer = QSvgRenderer(svg_data)
+            self.svg_item.setSharedRenderer(renderer)
+            
+            print(f"🔄 Styles SVG mis à jour pour {self.equipment_id}")
+
+    def on_pipe_styles_changed(self):
+        """Callback quand les styles globaux des tuyaux changent"""
+        print(f"🎨 Styles globaux changés - mise à jour {self.equipment_id}")
+        self.update_svg_styles()
+    
+    def set_item_scale(self, new_scale: float):
+        """
+        Modifie l'échelle de l'équipement et met à jour les styles en conséquence
+        
+        Args:
+            new_scale: Nouveau facteur d'échelle
+        """
+        if abs(self.item_scale - new_scale) > 0.001:  # Éviter les mises à jour inutiles
+            old_scale = self.item_scale
+            self.item_scale = new_scale
+            
+            # Appliquer l'échelle au SVG
+            if self.svg_item:
+                self.svg_item.setScale(new_scale)
+            
+            # Recalculer les dimensions
+            if self.svg_item:
+                self.width = self.svg_item.boundingRect().width() * self.item_scale
+                self.height = self.svg_item.boundingRect().height() * self.item_scale
+            
+            # Mettre à jour les styles avec la nouvelle échelle
+            self.update_svg_styles()
+            
+            print(f"📏 Échelle {self.equipment_id}: {old_scale:.3f} → {new_scale:.3f}")
+    
+    def get_effective_stroke_width(self, base_width: float) -> float:
+        """Retourne l'épaisseur effective d'un trait selon l'échelle actuelle"""
+        return pipe_style_manager.calculate_optimal_stroke_width(base_width, self.item_scale)
+
+    def get_scale_info(self) -> dict:
+        """Retourne des informations sur l'échelle et les ajustements"""
+        base_style = pipe_style_manager.get_pipe_style(self.current_visual_state)
+        scaled_style = pipe_style_manager.get_scaled_pipe_style(self.current_visual_state, self.item_scale)
+        
+        return {
+            'item_scale': self.item_scale,
+            'visual_state': self.current_visual_state,
+            'base_stroke_width': base_style.get('stroke-width', 'N/A'),
+            'scaled_stroke_width': scaled_style.get('stroke-width', 'N/A'),
+            'svg_dimensions': f"{self.width:.1f}x{self.height:.1f}"
+        }
+
+    def __del__(self):
+        """Nettoyage lors de la destruction"""
+        # Se déconnecter des signaux pour éviter les fuites mémoire
+        try:
+            pipe_style_manager.styles_changed.disconnect(self.on_pipe_styles_changed)
+        except:
+            pass
 
     #Lit le nombre de ports et leur position en fonction des informations contenues dans le SVG----------------
     def read_ports_from_svg(self, svg_path: str) -> List[dict]:
@@ -360,16 +609,19 @@ class EquipmentGraphicsItem(QGraphicsItem):
         """Définit la zone de collision/sélection complète"""
         
         # Zone principale de l'équipement
-        equipment_rect = QRectF(0, 0, self.width, self.height)
-        
+        margin = 0 #une marge pour "englober les ports. Le but est que l'élément reste symétrique"
+        equipment_rect = QRectF(0-margin, 0-margin, self.width+margin, self.height+margin)
+        #print(f"boundingRect: {equipment_rect.width()} x {equipment_rect.height()}")
+
         # Inclure les ports (avec une marge pour faciliter la sélection)
-        port_margin = 3
+        #port_margin = 3
         for port in self.ports.values():
             port_rect = port.boundingRect()
             port_rect.translate(port.pos())
-            port_rect.adjust(-port_margin, -port_margin, port_margin, port_margin)
+            #port_rect.adjust(-port_margin, -port_margin, port_margin, port_margin)
             equipment_rect = equipment_rect.united(port_rect)
         
+        #print(f"boundingRect final: {equipment_rect.width()} x {equipment_rect.height()}")
         return equipment_rect
     
     #dessin de l'équipement (classe abstraite de QGraphicsItem)
@@ -498,6 +750,9 @@ class EquipmentGraphicsItem(QGraphicsItem):
         
         if change == QGraphicsItem.ItemSelectedChange:
             # L'état de sélection a changé
+            new_visual_state = "selected" if value else "normal"
+            self.update_visual_state(new_visual_state)
+
             if value:
                 print(f"✅ Équipement sélectionné: {self.equipment_id}")
         
@@ -505,6 +760,8 @@ class EquipmentGraphicsItem(QGraphicsItem):
                 print(f"❌ Équipement désélectionné: {self.equipment_id}")
 
         elif change == QGraphicsItem.ItemPositionHasChanged:
+            #si l'objet est bougé, mettre à jour la polyligne
+            self.update_connected_polylines()
             if self.scene():
                 new_scene_rect = self.mapRectToScene(self.boundingRect())
                 new_scene_rect = new_scene_rect.adjusted(-10, -10, 10, 10)  # Marge de sécurité
@@ -530,7 +787,9 @@ class EquipmentGraphicsItem(QGraphicsItem):
 
     def update_transform(self):
         t = QTransform()
-        enter = self.boundingRect().center()
+        #enter = self.boundingRect().center()
+        enter = self.center
+        print(f"Centre de l'équipement: {enter.x()}, {enter.y()}")
         #transformations de l'equipement
         print(f"Transformations: rotation {self.rotation_angle}°, miroir_h {self.mirror_h}, miroir_v {self.mirror_v}")
         # 1. Translation au centre
@@ -554,6 +813,30 @@ class EquipmentGraphicsItem(QGraphicsItem):
         t.translate(-enter.x(), -enter.y())
         self.setTransform(t)
         self.update()
+
+    def add_connected_polyline(self, polyline):
+        """Ajoute une polyligne à la liste des connexions de cet équipement"""
+        if polyline not in self.connected_polylines:
+            self.connected_polylines.append(polyline)
+            print(f"🔗 Polyligne ajoutée aux connexions de {self.equipment_id}")
+    
+    def remove_connected_polyline(self, polyline):
+        """Retire une polyligne de la liste des connexions"""
+        if polyline in self.connected_polylines:
+            self.connected_polylines.remove(polyline)
+            print(f"🔗 Polyligne retirée des connexions de {self.equipment_id}")
+    
+    def update_connected_polylines(self):
+        """Met à jour toutes les polylignes connectées à cet équipement"""
+        for polyline in self.connected_polylines:
+            if hasattr(polyline, 'update_connection_points'):
+                polyline.update_connection_points()
+            else:
+                print(f"⚠️ Polyligne sans méthode update_connection_points")
+
+        print(f"🔄 {len(self.connected_polylines)} polylignes mises à jour pour {self.equipment_id}")
+
+
 
 # =============================================================================
 # CLASSE FACTORY POUR CRÉER LES ÉQUIPEMENTS GRAPHIQUES

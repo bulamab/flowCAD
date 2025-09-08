@@ -64,13 +64,13 @@ class RibbonToolbar(QWidget):
                     'tooltip': "Réfléchir l'équipement sélectionné autour de l'axe vertical"
                 },
                 {
-                    'text': 'Align H.',
+                    'text': 'Align V.',
                     'icon': 'Align_horizontal_center.svg',
                     'callback': self.on_align_horizontal_clicked,
                     'tooltip': "Aligner les équipements sélectionnés au centre horizontalement"
                 },
                 {
-                    'text': 'Align V.',
+                    'text': 'Align H.',
                     'icon': 'Align_vertical_center.svg',
                     'callback': self.on_align_vertical_clicked,
                     'tooltip': "Aligner les équipements sélectionnés au centre verticalement"
@@ -94,7 +94,7 @@ class RibbonToolbar(QWidget):
         
         # === ESPACEMENT FLEXIBLE ===
         main_layout.addStretch()  # Pousse le contenu vers la gauche
-        
+
         # === ZONE D'INFORMATIONS (OPTIONNEL) ===
         info_label = QLabel("FlowCAD v0.1.0")
         info_label.setStyleSheet("color: #6c757d; font-size: 10px;")

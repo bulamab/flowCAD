@@ -12,6 +12,7 @@ class ConnectionPanel(QWidget):
     
     # Signaux émis par le panneau
     connection_mode_changed = pyqtSignal(str)
+    ports_visibility_changed = pyqtSignal(bool)
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -35,6 +36,17 @@ class ConnectionPanel(QWidget):
             }
         """
 
+        self.button_active_style = """
+            QPushButton {
+                color: white;
+                padding: 10px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: #4CAF50;
+                text-align: center;
+            }
+        """
+        self.current_mode = "select"
         self.setup_ui()
     
     def setup_ui(self):
@@ -62,42 +74,58 @@ class ConnectionPanel(QWidget):
 
         layout.addWidget(self.create_mode_btn)
 
+        # Checkbox pour contrôler l'affichage des ports
+        from PyQt5.QtWidgets import QCheckBox
+        
+        self.show_connected_ports_cb = QCheckBox("Afficher ports connectés")
+        self.show_connected_ports_cb.setChecked(False)  # Cachés par défaut
+        self.show_connected_ports_cb.toggled.connect(self.on_show_ports_toggled)
+        layout.addWidget(self.show_connected_ports_cb)
+
         layout.addStretch()  # pousse tout vers le haut
+
+    def on_show_ports_toggled(self, checked):
+        """Callback de la checkbox d'affichage des ports"""
+        print(f"👻 Affichage ports connectés: {'ON' if checked else 'OFF'}")
+        # Émettre un signal
+        self.ports_visibility_changed.emit(checked)
 
     #fonction appelée en cas d'appui de l'utilisateur sur le bouton create
     def set_mode(self, mode):
         """Change le mode de connexion"""
         print(f"🔧 Mode connexion changé vers: {mode}")
         
-        ##MAB: attention, à adapter pour quitter le mode creation...
+        current_mode = self.get_current_mode()
+        #si on est déjà dans ce mode, revenir au mode select
+        if mode == current_mode:
+            self.reset_mode()
+            self.connection_mode_changed.emit(mode)
+            return
+
+        self.current_mode = mode  # ✅ Sauvegarder l'état actuel    
         
         if mode == "create":
             # Activer le mode création de tuyau
-            self.create_mode_btn.setStyleSheet("""
-                QPushButton {
-                    color: white;
-                    padding: 10px;
-                    border: 1px solid #ccc;
-                    border-radius: 4px;
-                    background-color: #4CAF50;
-                    text-align: center;
-                }
-            """)
+            self.create_mode_btn.setStyleSheet(self.button_active_style)
         else:
             # Style bouton normal
-            self.create_mode_btn.setStyleSheet("""
-                QPushButton {
-                    color: black;
-                    padding: 10px;
-                    border: 1px solid #ccc;
-                    border-radius: 4px;
-                    background-color: #f0f0f0;
-                    text-align: center;
-                }
-                QPushButton:hover {
-                    background-color: #e9ecef;
-                }
-            """)
+            self.create_mode_btn.setStyleSheet(self.button_style)
 
         #emet signal pour avertir du changement de mode
         self.connection_mode_changed.emit(mode)
+    
+    # ✅ NOUVELLE MÉTHODE : Réinitialiser le mode
+    def reset_mode(self):
+        """Remet le panneau en mode normal (select)"""
+        print("🔄 Réinitialisation du mode connexion")
+        self.set_mode("select")
+    
+    # ✅ NOUVELLE MÉTHODE : Obtenir l'état actuel
+    def get_current_mode(self):
+        """Retourne le mode actuel"""
+        return self.current_mode
+    
+    # ✅ NOUVELLE MÉTHODE : Vérifier si en mode création
+    def is_in_create_mode(self):
+        """Vérifie si le panneau est en mode création"""
+        return self.current_mode == "create"

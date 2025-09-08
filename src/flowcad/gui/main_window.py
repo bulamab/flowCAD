@@ -75,6 +75,10 @@ class FlowCADMainWindow(QMainWindow):
         self.Left_panel = LeftPanel(self)
         panels_layout.addWidget(self.Left_panel)
         self.Left_panel.get_connection_panel().connection_mode_changed.connect(self.on_connection_mode_changed)
+        self.Left_panel.get_connection_panel().ports_visibility_changed.connect(self.on_ports_visibility_changed)
+
+        # Connecter le signal de fin de création de polyligne
+        self.drawing_canvas.polyline_creation_finished.connect(self.on_polyline_creation_finished)
         
         # Zone de dessin au centre
         #self.drawing_canvas = DrawingCanvas(self)
@@ -150,7 +154,26 @@ class FlowCADMainWindow(QMainWindow):
             self.drawing_canvas.set_interaction_mode("select")
             self.statusBar().showMessage("Mode: Sélection")
 
+    def on_polyline_creation_finished(self):
+        """Callback quand une polyligne est terminée (créée ou annulée)"""
+        print("🏁 Création de polyligne terminée - reset du panneau connexion")
+        
+        # Remettre le panneau connexion en mode normal
+        connection_panel = self.Left_panel.get_connection_panel()
+        if connection_panel.is_in_create_mode():
+            connection_panel.reset_mode()
+            print("✅ Bouton 'Création de tuyau' remis à l'état normal")
+        
+        # Mettre à jour la barre de statut
+        self.statusBar().showMessage("Mode: Sélection")
 
+    def on_ports_visibility_changed(self, visible):
+        """Callback quand l'utilisateur change la visibilité des ports"""
+        print(f"🎛️ Demande de changement visibilité ports: {visible}")
+        self.drawing_canvas.set_connected_ports_visibility(visible)
+        
+        status_msg = "affichés" if visible else "cachés"
+        self.statusBar().showMessage(f"Ports connectés {status_msg}", 2000)
 
 
 

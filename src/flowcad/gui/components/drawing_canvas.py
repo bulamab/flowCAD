@@ -13,10 +13,9 @@ import json
 from typing import Dict, List, Optional, Tuple
 
 # Import de la nouvelle classe graphique
-from ..graphics.equipment_graphics import (EquipmentGraphicsItem, PortGraphicsItem, 
-                                        PortConnectionStatus, PortVisualState, EquipmentGraphicsFactory)
+from ..graphics.equipment_graphics import *
 
-from ..graphics.polyline_graphics import (PolylineGraphicsItem, PolylineControlPoint, create_polyline_from_ports)
+from ..graphics.polyline_graphics import *
 
 class DrawingCanvas(QGraphicsView):
     """Zone de dessin principale pour FlowCAD"""
@@ -26,7 +25,9 @@ class DrawingCanvas(QGraphicsView):
     equipment_selected = pyqtSignal(str)              # equipment_id
     equipment_deleted = pyqtSignal(str)               # equipment_id
     port_selected = pyqtSignal(str, str)              # (equipment_id, port_id)
-    
+
+    polyline_creation_finished = pyqtSignal()         # Signal émis lorsque la création de la polyligne est terminée
+
     def __init__(self, parent=None):
         super().__init__(parent)
         
@@ -54,8 +55,147 @@ class DrawingCanvas(QGraphicsView):
         self.preview_line = None      # Ligne de prévisualisation
         self.is_creating_polyline = False  # Flag de création active
 
+        # Variables pour le routage de polylignes
+        self.orthogonal_routing_enabled = True
+        self.routing_preference = "horizontal_first"  # "auto", "horizontal_first", "vertical_first"
+        self.routing_optimization = True  # Supprimer les points redondants
+        self.routing_tolerance = 0.1     # Tolérance pour l'orthogonalité
+
         # Liste des polylignes créées
         self.polylines: List[PolylineGraphicsItem] = []
+        #variables pour la création de polylignes
+        self.locked_direction = None        # "horizontal", "vertical", ou None
+        self.direction_lock_threshold = 10  # Distance minimale pour verrouiller la direction
+
+        #self.init_pipe_style_sync() #plus besoin, se fait automatiquement
+    
+    '''def init_pipe_style_sync(self):
+        """Initialise la synchronisation des styles de tuyaux"""
+        
+        # Créer une polyligne temporaire pour extraire les styles par défaut
+        
+        temp_points = [QPointF(0, 0), QPointF(100, 0)]
+        temp_polyline = PolylineGraphicsItem(temp_points)
+        
+        # Synchroniser les styles
+        pipe_style_manager.sync_with_polyline_styles(temp_polyline)
+        
+        print("🎨 Synchronisation initiale des styles tuyaux effectuée")'''
+    
+    #méthodes inutilisées maintenant
+    '''def update_pipe_styles(self, normal_color: str = None, normal_width: int = None,
+                          selected_color: str = None, selected_width: int = None,
+                          hover_color: str = None, hover_width: int = None):
+        """Met à jour les styles globaux des tuyaux"""
+        
+        if normal_color or normal_width:
+            style_updates = {}
+            if normal_color:
+                style_updates['stroke'] = normal_color
+            if normal_width:
+                style_updates['stroke-width'] = str(normal_width)
+            pipe_style_manager.set_pipe_style('normal', **style_updates)
+        
+        if selected_color or selected_width:
+            style_updates = {}
+            if selected_color:
+                style_updates['stroke'] = selected_color
+            if selected_width:
+                style_updates['stroke-width'] = str(selected_width)
+            pipe_style_manager.set_pipe_style('selected', **style_updates)
+        
+        if hover_color or hover_width:
+            style_updates = {}
+            if hover_color:
+                style_updates['stroke'] = hover_color
+            if hover_width:
+                style_updates['stroke-width'] = str(hover_width)
+            pipe_style_manager.set_pipe_style('hover', **style_updates)
+        
+        # Mettre à jour toutes les polylignes existantes pour synchroniser
+        self.sync_polyline_styles_with_manager()
+    
+    def sync_polyline_styles_with_manager(self):
+        """Synchronise les styles des polylignes avec le gestionnaire"""
+        
+        normal_style = pipe_style_manager.get_pipe_style('normal')
+        selected_style = pipe_style_manager.get_pipe_style('selected')
+        hover_style = pipe_style_manager.get_pipe_style('hover')
+        
+        for polyline in self.polylines:
+            # Mettre à jour les pens de la polyligne
+            from PyQt5.QtGui import QPen, QColor
+            
+            # Pen normal
+            normal_color = QColor(normal_style['stroke'])
+            normal_width = int(normal_style['stroke-width'])
+            polyline.normal_pen = QPen(normal_color, normal_width)
+            
+            # Pen sélectionné
+            selected_color = QColor(selected_style['stroke'])
+            selected_width = int(selected_style['stroke-width'])
+            polyline.selected_pen = QPen(selected_color, selected_width)
+            
+            # Pen hover
+            hover_color = QColor(hover_style['stroke'])
+            hover_width = int(hover_style['stroke-width'])
+            polyline.hover_pen = QPen(hover_color, hover_width)
+            
+            # Appliquer le pen approprié selon l'état actuel
+            if polyline.isSelected():
+                polyline.setPen(polyline.selected_pen)
+            else:
+                polyline.setPen(polyline.normal_pen)
+        
+        print(f"🔄 Styles synchronisés pour {len(self.polylines)} polylignes")'''
+
+    # Ajouter des méthodes utilitaires pour les contrôles UI
+
+    def set_pipe_color_theme(self, theme: str):
+        """Applique un thème de couleur prédéfini"""
+        
+        themes = {
+            'blue': {
+                'normal': '#4682B4',
+                'selected': '#FF8C00', 
+                'hover': '#1E90FF'
+            },
+            'green': {
+                'normal': '#228B22',
+                'selected': '#FF6347',
+                'hover': '#32CD32'  
+            },
+            'red': {
+                'normal': '#DC143C',
+                'selected': '#FFD700',
+                'hover': '#FF1493'
+            },
+            'purple': {
+                'normal': '#9932CC',
+                'selected': '#FF69B4',
+                'hover': '#DA70D6'
+            }
+        }
+        
+        if theme in themes:
+            colors = themes[theme]
+            self.update_pipe_styles(
+                normal_color=colors['normal'],
+                selected_color=colors['selected'], 
+                hover_color=colors['hover']
+            )
+            print(f"🎨 Thème '{theme}' appliqué")
+        else:
+            print(f"⚠️ Thème inconnu: {theme}")
+
+    def get_pipe_style_info(self):
+        """Retourne les informations sur les styles actuels"""
+        return {
+            'normal': pipe_style_manager.get_pipe_style('normal'),
+            'selected': pipe_style_manager.get_pipe_style('selected'),
+            'hover': pipe_style_manager.get_pipe_style('hover'),
+            'cache_size': len(pipe_style_manager.modified_svg_cache)
+        }
         
     def setup_view(self):
         """Configure la vue graphique"""
@@ -238,6 +378,10 @@ class DrawingCanvas(QGraphicsView):
         
         super().mouseMoveEvent(event)
 
+    #---------------------------------------------------------------------------------
+    # Fonctions pour le dessin de tuyau
+    #---------------------------------------------------------------------------------
+
     def apply_orthogonal_constraint(self, pos: QPointF) -> QPointF:
         """Applique les contraintes orthogonales (mouvement H ou V uniquement)"""
         
@@ -246,17 +390,53 @@ class DrawingCanvas(QGraphicsView):
         
         last_point = self.polyline_points[-1]
         
-        # Calculer les distances horizontale et verticale
+        # Calculer les distances depuis le dernier point
         dx = abs(pos.x() - last_point.x())
         dy = abs(pos.y() - last_point.y())
+
+        # Si aucune direction n'est verrouillée, déterminer la direction
+        if self.locked_direction is None:
+            
+            # Vérifier si on a dépassé le seuil pour verrouiller
+            if max(dx, dy) >= self.direction_lock_threshold:
+                if dx > dy:
+                    self.locked_direction = "horizontal"
+                    print(f"🔒 Direction verrouillée: HORIZONTALE")
+                else:
+                    self.locked_direction = "vertical"
+                    print(f"🔒 Direction verrouillée: VERTICALE")
+            
+            # Pas encore de verrouillage, suivre la direction dominante
+            if dx > dy:
+                return QPointF(pos.x(), last_point.y())
+            else:
+                return QPointF(last_point.x(), pos.y())
         
-        # Garder la direction dominante
-        if dx > dy:
-            # Mouvement horizontal dominant
-            return QPointF(pos.x(), last_point.y())
-        else:
-            # Mouvement vertical dominant
-            return QPointF(last_point.x(), pos.y())
+        # Direction verrouillée - appliquer la contrainte
+        if self.locked_direction == "horizontal":
+            constrained_pos = QPointF(pos.x(), last_point.y())
+        else:  # vertical
+            constrained_pos = QPointF(last_point.x(), pos.y())
+        
+        # Vérifier si on revient au point précédent pour déverrouiller
+        distance_to_last = self.distance_between_points(pos, last_point)
+        if distance_to_last < self.direction_lock_threshold / 2:  # Hysteresis
+            self.unlock_direction()
+            return pos  # Permettre le mouvement libre près du point de départ
+        
+        return constrained_pos
+    
+    def distance_between_points(self, p1: QPointF, p2: QPointF) -> float:
+        """Calcule la distance entre deux points"""
+        dx = p1.x() - p2.x()
+        dy = p1.y() - p2.y()
+        return (dx*dx + dy*dy)**0.5
+    
+    def unlock_direction(self):
+        """Déverrouille la direction et permet un nouveau choix"""
+        if self.locked_direction:
+            print(f"🔓 Direction déverrouillée (était: {self.locked_direction})")
+            self.locked_direction = None
         
     def handle_port_click_for_polyline(self, port):
         """Gère les clics sur ports - MISE À JOUR avec contraintes"""
@@ -272,9 +452,13 @@ class DrawingCanvas(QGraphicsView):
             port.set_visual_state(PortVisualState.SELECTED)
             
             # Position de départ
-            start_pos = port.scenePos()
+            rect = port.boundingRect() #le bounding rect
+            start_pos = port.scenePos()+rect.center() #le centre du port
             self.polyline_points = [start_pos]
             
+            # Réinitialiser le verrouillage pour cette nouvelle polyligne
+            self.locked_direction = None
+
             # Créer la polyligne de prévisualisation
             self.current_polyline = PolylineGraphicsItem([start_pos, start_pos])
             self.current_polyline.setFlag(QGraphicsPathItem.ItemIsSelectable, False)
@@ -306,12 +490,23 @@ class DrawingCanvas(QGraphicsView):
                 return
             
             # Ajouter le point final
-            end_pos = port.scenePos()
-            
+            rect = port.boundingRect() #le bounding rect
+            end_pos = port.scenePos()+rect.center() #le centre du port
+
             # Appliquer contrainte orthogonale pour le dernier segment
-            if len(self.polyline_points) > 1:
+            if len(self.polyline_points) >= 1:
                 constrained_end = self.apply_orthogonal_constraint(end_pos)
-                self.polyline_points.append(constrained_end)
+                print(f"🔧 Contrainte appliquée au point final: ({constrained_end.x():.1f}, {constrained_end.y():.1f})")
+
+                # Vérifier si on a besoin d'un point intermédiaire
+                start_pos = self.polyline_points[0]
+                
+                # Toujours ajouter le point contraint s'il est différent du point final
+                if (abs(constrained_end.x() - end_pos.x()) > 1 or 
+                    abs(constrained_end.y() - end_pos.y()) > 1):
+                    
+                    self.polyline_points.append(constrained_end)
+                    print(f"📍 Point intermédiaire ajouté: ({constrained_end.x():.1f}, {constrained_end.y():.1f})")
             
             self.polyline_points.append(end_pos)
             
@@ -327,6 +522,11 @@ class DrawingCanvas(QGraphicsView):
             return
         
         self.polyline_points.append(pos)
+
+        #Réinitialiser le verrouillage pour le prochain segment
+        print(f"📍 Point ajouté: ({pos.x():.1f}, {pos.y():.1f})")
+        print(f"🔓 Direction réinitialisée pour le prochain segment")
+        self.locked_direction = None
         
         # Mettre à jour la polyligne de prévisualisation
         if self.current_polyline:
@@ -359,6 +559,33 @@ class DrawingCanvas(QGraphicsView):
             print("❌ Pas assez de points pour créer une polyligne")
             self.cancel_polyline_creation()
             return
+
+        # Sauvegarder les références
+        start_port = self.start_port
+        end_port_ref = end_port
+        points_copy = self.polyline_points.copy()
+        # Ajouter des points si seulement 2 points
+        enhanced_points = self.add_intermediate_points_if_needed(points_copy)
+        
+        '''# ✅ AMÉLIORATION : Optimiser le chemin si nécessaire
+        if self.routing_optimization:
+            original_count = len(self.polyline_points)
+            self.polyline_points = optimize_orthogonal_path(self.polyline_points)
+            optimized_count = len(self.polyline_points)
+            
+            if optimized_count < original_count:
+                print(f"📐 Chemin optimisé: {original_count} → {optimized_count} points")
+        
+        # Valider l'orthogonalité
+        if self.orthogonal_routing_enabled:
+            if not validate_orthogonal_path(self.polyline_points):
+                print("⚠️ Chemin non-orthogonal détecté - correction appliquée")
+                # Corriger si nécessaire
+                start_pos = self.polyline_points[0]
+                end_pos = self.polyline_points[-1]
+                self.polyline_points = calculate_optimal_orthogonal_path(
+                    start_pos, end_pos, self.routing_preference
+                )'''
         
         # Supprimer la polyligne de prévisualisation
         if self.current_polyline:
@@ -367,7 +594,7 @@ class DrawingCanvas(QGraphicsView):
         
         # Créer la polyligne finale
         final_polyline = PolylineGraphicsItem(
-            self.polyline_points, 
+            enhanced_points, 
             self.start_port, 
             end_port
         )
@@ -391,12 +618,50 @@ class DrawingCanvas(QGraphicsView):
         # Retourner au mode sélection
         self.set_interaction_mode("select")
 
+        # Émettre le signal de fin de création
+        self.polyline_creation_finished.emit()
+        print("📡 Signal polyline_creation_finished émis")
+
+    def add_intermediate_points_if_needed(self, points: List[QPointF]) -> List[QPointF]:
+        """Ajoute des points si seulement 2 points"""
+        
+        if len(points) == 2:
+            start_point = points[0]
+            end_point = points[1]
+            
+            # Point au milieu exact
+            mid_x = start_point.x() + (end_point.x() - start_point.x()) * 0.5
+            mid_y = start_point.y() + (end_point.y() - start_point.y()) * 0.5
+            
+            # Créer 2 points superposés au milieu
+            middle_point1 = QPointF(mid_x, mid_y)
+            middle_point2 = QPointF(mid_x, mid_y)
+            
+            print(f"✅ Ajout de 2 points au milieu: ({mid_x:.1f}, {mid_y:.1f})")
+            
+            return [start_point, middle_point1, middle_point2, end_point]
+        elif len(points) == 3:
+            # Nouveau cas : 3 points - dupliquer le point final
+            duplicated_end_point = QPointF(points[-1].x(), points[-1].y())
+        
+            print(f"Ajout d'un point dupliqué à la fin: ({duplicated_end_point.x():.1f}, {duplicated_end_point.y():.1f})")
+        
+            return points + [duplicated_end_point]
+
+        else:
+            return points  # Déjà assez de points
+
+
+
     def reset_polyline_creation(self):
         """Remet à zéro les variables de création"""
         self.current_polyline = None
         self.polyline_points = []
         self.start_port = None
         self.is_creating_polyline = False
+
+        # Déverrouiller la direction
+        self.unlock_direction()
 
     def cancel_polyline_creation(self):
         """Annule la création de polyligne - MISE À JOUR"""
@@ -423,15 +688,21 @@ class DrawingCanvas(QGraphicsView):
         # Retourner au mode sélection
         self.set_interaction_mode("select")
 
+        # Émettre le signal de fin de création (même en cas d'annulation)
+        self.polyline_creation_finished.emit()
+        print("📡 Signal polyline_creation_finished émis (annulation)")
+
     def remove_polyline(self, polyline: PolylineGraphicsItem):
         """Supprime une polyligne et libère ses ports"""
         
+        polyline.destroy()  # Désenregistre des équipements
+
         # Libérer les ports connectés
         if polyline.start_port:
-            polyline.start_port.set_connection_status(PortConnectionStatus.FREE)
+            polyline.start_port.set_connection_status(PortConnectionStatus.DISCONNECTED)
         if polyline.end_port:
-            polyline.end_port.set_connection_status(PortConnectionStatus.FREE)
-        
+            polyline.end_port.set_connection_status(PortConnectionStatus.DISCONNECTED)
+
         # Supprimer de la scène
         self.scene.removeItem(polyline)
         
@@ -440,6 +711,30 @@ class DrawingCanvas(QGraphicsView):
             self.polylines.remove(polyline)
         
         print("🗑️ Polyligne supprimée")
+
+    def set_direction_lock_threshold(self, threshold: int):
+        """Définit le seuil de verrouillage de direction"""
+        self.direction_lock_threshold = max(5, threshold)  # Minimum 5 pixels
+        print(f"🎛️ Seuil de verrouillage: {self.direction_lock_threshold} pixels")
+
+    def set_orthogonal_routing(self, enabled: bool):
+        """Active/désactive le routage orthogonal automatique"""
+        self.orthogonal_routing_enabled = enabled
+        print(f"📐 Routage orthogonal: {'ON' if enabled else 'OFF'}")
+    
+    def set_routing_preference(self, preference: str):
+        """Définit la préférence de routage : 'auto', 'horizontal_first', 'vertical_first'"""
+        if preference in ["auto", "horizontal_first", "vertical_first"]:
+            self.routing_preference = preference
+            print(f"📐 Préférence de routage: {preference}")
+        else:
+            print(f"⚠️ Préférence invalide: {preference}")
+    
+    def toggle_routing_optimization(self):
+        """Toggle l'optimisation des chemins"""
+        self.routing_optimization = not self.routing_optimization
+        print(f"📐 Optimisation des chemins: {'ON' if self.routing_optimization else 'OFF'}")
+        return self.routing_optimization
     
     # =============================================================================
     # GESTION DES ÉQUIPEMENTS
@@ -493,6 +788,11 @@ class DrawingCanvas(QGraphicsView):
         
         if equipment_id in self.equipment_items:
             equipment_item = self.equipment_items[equipment_id]
+
+            #supprimer les polylignes associées 
+            polylines_to_remove = equipment_item.connected_polylines.copy()
+            for polyline in polylines_to_remove:
+                self.remove_polyline(polyline)
             
             # Retirer de la scène
             self.scene.removeItem(equipment_item)
@@ -607,15 +907,28 @@ class DrawingCanvas(QGraphicsView):
         
         selected_items = self.scene.selectedItems()
         equipment_to_delete = []
-        
+        pipes_to_delete = []
+        print(f"éléments sélectionnés: {selected_items}")
+
+        #la liste des équipements à effacer
         for item in selected_items:
             if isinstance(item, EquipmentGraphicsItem):
                 equipment_to_delete.append(item.equipment_id)
         
+        #la liste des tuyaux (polylignes) à effacer
+        for item in selected_items:
+            if isinstance(item, PolylineGraphicsItem):
+                pipes_to_delete.append(item)
+
         # Supprimer les équipements
         for equipment_id in equipment_to_delete:
             self.remove_equipment(equipment_id)
-    
+
+
+        # Supprimer les tuyaux
+        for pipe in pipes_to_delete:
+            self.remove_polyline(pipe)
+
     def contextMenuEvent(self, event: QContextMenuEvent):
         """Menu contextuel (clic droit)"""
         
@@ -765,13 +1078,19 @@ class DrawingCanvas(QGraphicsView):
         if len(selected_equipments) >= 2:
             last_item = selected_equipments[-1]
             last_pos = last_item.pos()
+            last_pos_center = last_item.center
+            #print(f"Position de référence pour l'alignement: {last_pos.x()}, {last_pos.y()}\n")
+            #print(f"Dimensions de l'équipement: {last_item.boundingRect().width()} x {last_item.boundingRect().height()}\n")
+            #print(f"Centre de l'équipement: {last_item.center.x()}, {last_item.center.y()}\n")
             #si alignement horizontal
             if direction == "v":
                 for item in selected_equipments[:-1]:
-                    item.setPos(item.pos().x(), last_pos.y())
+                    center = item.center
+                    item.setPos(item.pos().x(), last_pos.y()-center.y()+last_pos_center.y())
             elif direction == "h":
                 for item in selected_equipments[:-1]:
-                    item.setPos(last_pos.x(), item.pos().y())
+                    center = item.center
+                    item.setPos(last_pos.x()-center.x()+last_pos_center.x(), item.pos().y())
 
     def distribute_selected_equipment(self, direction):
         print(f"Distribution de l'équipement sélectionné: {direction}")
@@ -802,6 +1121,7 @@ class DrawingCanvas(QGraphicsView):
 
     #=========================================================================
     #fonctions liées aux connections
+    #=========================================================================
 
     def set_interaction_mode(self, mode):
         """Change le mode d'interaction du canvas"""
@@ -810,8 +1130,8 @@ class DrawingCanvas(QGraphicsView):
         old_mode = self.interaction_mode
         self.interaction_mode = mode
         
-        # Nettoyer l'ancien mode
-        if old_mode == "create_polyline":
+        # Nettoyer l'ancien mode SEULEMENT si nécessaire
+        if old_mode == "create_polyline" and self.is_creating_polyline:  # ← AJOUT DE LA CONDITION
             self.cancel_polyline_creation()
         
         # Configurer le nouveau mode
@@ -834,79 +1154,89 @@ class DrawingCanvas(QGraphicsView):
                         port.set_visual_state(PortVisualState.NORMAL)
 
     
-    '''
-    def handle_port_click_for_polyline(self, port):
-        """Gère les clics sur ports en mode création de polyligne - VERSION MISE À JOUR"""
+    
+    #----- Pour le visibilité ou non des ports connecté-----------------
+
+    def toggle_connected_ports_visibility(self):
+        """Toggle l'affichage des ports connectés"""
+        current_state = PortGraphicsItem.get_show_connected_ports()
+        new_state = not current_state
         
-        if not self.start_port:
-            # Premier clic - démarrer la polyligne
-            if not port.can_connect():
-                print(f"❌ Port {port.port_id} ne peut pas être utilisé comme point de départ")
-                return
-            
-            self.start_port = port
-            port.set_connection_status(PortConnectionStatus.RESERVED)  # Réserver temporairement
-            port.set_visual_state(PortVisualState.SELECTED)
-            
-            # Position de départ en coordonnées de scène
-            start_pos = port.scenePos()
-            self.polyline_points = [start_pos]
-            
-            print(f"🚀 Début de polyligne depuis {port.port_id}")
-            print(f"   Position: {start_pos.x():.1f}, {start_pos.y():.1f}")
-            
-        else:
-            # Deuxième clic (ou plus) - terminer la polyligne
-            if port == self.start_port:
-                print("❌ Ne peut pas connecter un port à lui-même")
-                return
-            
-            if not port.can_connect():
-                print(f"❌ Port {port.port_id} ne peut pas être utilisé comme point d'arrivée")
-                return
-            
-            end_pos = port.scenePos()
-            self.polyline_points.append(end_pos)
-            
-            print(f"🏁 Fin de polyligne sur {port.port_id}")
-            print(f"   Position: {end_pos.x():.1f}, {end_pos.y():.1f}")
-            
-            # Créer la polyligne finale
-            #self.create_final_polyline()
-            
-            # Marquer les ports comme connectés
-            self.start_port.set_connection_status(PortConnectionStatus.CONNECTED)
-            port.set_connection_status(PortConnectionStatus.CONNECTED)
-            
-            # États visuels normaux
-            self.start_port.set_visual_state(PortVisualState.NORMAL)
-            port.set_visual_state(PortVisualState.NORMAL)
-            
-            # Réinitialiser
-            self.start_port = None
-            self.polyline_points = []
-            '''
-    
-'''def cancel_polyline_creation(self):
-    """Annule la création de polyligne en cours - VERSION MISE À JOUR"""
-    
-    # Libérer le port de départ s'il était réservé
-    if self.start_port:
-        self.start_port.set_connection_status(PortConnectionStatus.FREE)
-        self.start_port.set_visual_state(PortVisualState.NORMAL)
-    
-    # Nettoyer les éléments graphiques
-    if self.current_polyline:
-        self.scene.removeItem(self.current_polyline)
-        self.current_polyline = None
-    
-    if self.preview_line:
-        self.scene.removeItem(self.preview_line)
-        self.preview_line = None
-    
-    self.polyline_points = []
-    self.start_port = None
-    print("❌ Création de polyligne annulée")'''
+        PortGraphicsItem.set_show_connected_ports(new_state)
+        self.update_all_ports_visibility()
+        
+        status_msg = "Ports connectés affichés" if new_state else "Ports connectés cachés"
+        print(f"👻 {status_msg}")
+        return new_state
+
+    def set_connected_ports_visibility(self, visible: bool):
+        """Définit l'affichage des ports connectés"""
+        PortGraphicsItem.set_show_connected_ports(visible)
+        self.update_all_ports_visibility()
+        
+        status_msg = "affichés" if visible else "cachés"
+        print(f"👻 Ports connectés {status_msg}")
+
+    def update_all_ports_visibility(self):
+        """Met à jour la visibilité de tous les ports existants"""
+        total_ports = 0
+        updated_ports = 0
+        
+        for equipment_item in self.equipment_items.values():
+            for port in equipment_item.get_all_ports():
+                total_ports += 1
+                old_visibility = port.isVisible()
+                port.update_visibility()
+                if old_visibility != port.isVisible():
+                    updated_ports += 1
+        
+        print(f"🔄 {updated_ports}/{total_ports} ports mis à jour")
+
+    def show_all_ports_temporarily(self, duration_ms: int = 3000):
+        """Affiche temporairement tous les ports (pour debug/édition)"""
+        
+        # Sauvegarder l'état actuel
+        original_state = PortGraphicsItem.get_show_connected_ports()
+        
+        # Afficher tous les ports
+        self.set_connected_ports_visibility(True)
+        
+        # Programmer le retour à l'état original
+        if hasattr(self, 'temp_visibility_timer'):
+            self.temp_visibility_timer.stop()
+        
+        from PyQt5.QtCore import QTimer
+        self.temp_visibility_timer = QTimer()
+        self.temp_visibility_timer.timeout.connect(lambda: self.set_connected_ports_visibility(original_state))
+        self.temp_visibility_timer.setSingleShot(True)
+        self.temp_visibility_timer.start(duration_ms)
+        
+        print(f"👁️ Affichage temporaire de tous les ports pendant {duration_ms}ms")
+
+    def get_ports_visibility_info(self):
+        """Retourne des statistiques sur la visibilité des ports"""
+        total_ports = 0
+        visible_ports = 0
+        connected_ports = 0
+        visible_connected_ports = 0
+        
+        for equipment_item in self.equipment_items.values():
+            for port in equipment_item.get_all_ports():
+                total_ports += 1
+                if port.isVisible():
+                    visible_ports += 1
+                if port.connection_status == PortConnectionStatus.CONNECTED:
+                    connected_ports += 1
+                    if port.isVisible():
+                        visible_connected_ports += 1
+        
+        return {
+            'total_ports': total_ports,
+            'visible_ports': visible_ports, 
+            'connected_ports': connected_ports,
+            'visible_connected_ports': visible_connected_ports,
+            'global_setting': PortGraphicsItem.get_show_connected_ports()
+        }
 
 # =============================================================================
 # EXEMPLE D'UTILISATION DANS MAIN_WINDOW

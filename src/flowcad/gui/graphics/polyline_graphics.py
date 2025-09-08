@@ -9,8 +9,16 @@ from PyQt5.QtWidgets import QGraphicsPathItem, QGraphicsEllipseItem
 from PyQt5.QtCore import QPointF, Qt
 from PyQt5.QtGui import QPainterPath, QPen, QColor, QBrush
 from typing import List, Optional
+from enum import Enum
 
-#from .equipment_graphics import PortGraphicsItem, PortConnectionStatus
+from .equipment_graphics import PortGraphicsItem, PortConnectionStatus
+from .pipe_style_manager import pipe_style_manager
+
+
+'''class MovementType(Enum):
+    HORIZONTAL = "horizontal"
+    VERTICAL = "vertical" 
+    DIAGONAL = "diagonal"'''
 
 # =============================================================================
 # CLASSE PRINCIPALE POUR UNE POLYLIGNE GRAPHIQUE
@@ -26,11 +34,19 @@ class PolylineGraphicsItem(QGraphicsPathItem):
         self.start_port = start_port
         self.end_port = end_port
         self.control_points: List[PolylineControlPoint] = []
+
+        #liaison avec l'équipement existant
+        self.register_with_connected_equipment()
+
+        #va chercher les valeurs par défaut de pipe_style_manager       
+        normal_style = pipe_style_manager.get_pipe_style('normal')
+        selected_style = pipe_style_manager.get_pipe_style('selected') 
+        hover_style = pipe_style_manager.get_pipe_style('hover')
         
         # Style de la polyligne
-        self.normal_pen = QPen(QColor(70, 130, 180), 3)  # Bleu acier, épaisseur 3
-        self.selected_pen = QPen(QColor(255, 140, 0), 4)  # Orange, épaisseur 4
-        self.hover_pen = QPen(QColor(30, 144, 255), 4)   # Bleu dodger
+        self.normal_pen = QPen(QColor(normal_style['stroke']), float(normal_style['stroke-width']))
+        self.selected_pen = QPen(QColor(selected_style['stroke']), float(selected_style['stroke-width']))
+        self.hover_pen = QPen(QColor(hover_style['stroke']), float(hover_style['stroke-width']))
         
         # Configuration
         self.setFlag(QGraphicsPathItem.ItemIsSelectable, True)
@@ -49,6 +65,12 @@ class PolylineGraphicsItem(QGraphicsPathItem):
         if len(self.points) < 2:
             return
         
+        # Invalider l'ancienne zone avant modification
+        if self.scene():
+            old_rect = self.mapRectToScene(self.boundingRect())
+            old_rect = old_rect.adjusted(-5, -5, 5, 5)  # Petite marge
+            self.scene().update(old_rect)
+
         path = QPainterPath()
         path.moveTo(self.points[0])
         
@@ -56,6 +78,12 @@ class PolylineGraphicsItem(QGraphicsPathItem):
             path.lineTo(self.points[i])
         
         self.setPath(path)
+
+        # Invalider la nouvelle zone après modification
+        if self.scene():
+            new_rect = self.mapRectToScene(self.boundingRect())
+            new_rect = new_rect.adjusted(-5, -5, 5, 5)  # Petite marge
+            self.scene().update(new_rect)
     
     def create_control_points(self):
         """Crée les points de contrôle pour l'édition"""
@@ -148,6 +176,406 @@ class PolylineGraphicsItem(QGraphicsPathItem):
         if event.button() == Qt.LeftButton:
             print(f"🔗 Polyligne sélectionnée")
         super().mousePressEvent(event)
+
+    def register_with_connected_equipment(self):
+        """S'enregistre auprès des équipements connectés pour recevoir les notifications"""
+        if self.start_port and self.start_port.parent_equipment:
+            self.start_port.parent_equipment.add_connected_polyline(self)
+        
+        if self.end_port and self.end_port.parent_equipment:
+            self.end_port.parent_equipment.add_connected_polyline(self)
+        
+        print(f"🔗 Polyligne enregistrée auprès des équipements connectés")
+    
+    def unregister_from_connected_equipment(self):
+        """Se désenregistre des équipements connectés"""
+        if self.start_port and self.start_port.parent_equipment:
+            self.start_port.parent_equipment.remove_connected_polyline(self)
+        
+        if self.end_port and self.end_port.parent_equipment:
+            self.end_port.parent_equipment.remove_connected_polyline(self)
+        
+        print(f"🔗 Polyligne désenregistrée des équipements connectés")
+    
+    def update_connection_points(self):
+        """Met à jour les points en maintenant l'alignement orthogonal"""
+        if not self.start_port or not self.end_port:
+            print("⚠️ Impossible de mettre à jour : ports manquants")
+            return
+        
+        # Sauvegarder l'ancienne zone avant modification
+        old_bounding_rect = self.boundingRect()
+        old_scene_rect = self.mapRectToScene(old_bounding_rect)
+
+        # Obtenir les nouvelles positions des ports
+        new_start_pos = self.start_port.scenePos()
+        new_end_pos = self.end_port.scenePos()
+        
+        # Vérifier quel port a bougé
+        old_start_pos = self.points[0]
+        old_end_pos = self.points[-1]
+        
+        start_moved = self.has_moved_significantly(old_start_pos, new_start_pos)
+        end_moved = self.has_moved_significantly(old_end_pos, new_end_pos)
+        
+        if not start_moved and not end_moved:
+            return
+        
+        print(f"🔄 Mise à jour polyligne: start_moved={start_moved}, end_moved={end_moved}")
+        
+        # Mettre à jour les points concernés
+        if start_moved:
+            self.update_start_point_and_adjacent(new_start_pos)
+        
+        if end_moved:
+            self.update_end_point_and_adjacent(new_end_pos)
+        
+        # Redessiner
+        self.update_path()
+        self.update_control_points_positions()
+
+        # Invalider l'ancienne ET la nouvelle zone
+        new_bounding_rect = self.boundingRect()
+        new_scene_rect = self.mapRectToScene(new_bounding_rect)
+        
+        # Combiner les deux zones avec une marge de sécurité
+        combined_rect = old_scene_rect.united(new_scene_rect)
+        margin = 10  # Marge de sécurité
+        combined_rect = combined_rect.adjusted(-margin, -margin, margin, margin)
+        
+        # Forcer le repaint de cette zone
+        if self.scene():
+            self.scene().update(combined_rect)
+            print(f"🎨 Zone repaint: {combined_rect.width():.0f}x{combined_rect.height():.0f}")
+
+
+    def has_moved_significantly(self, old_pos, new_pos, threshold=1.0):
+        """Vérifie si un point a bougé de manière significative"""
+        dx = abs(new_pos.x() - old_pos.x())
+        dy = abs(new_pos.y() - old_pos.y())
+        return dx > threshold or dy > threshold
+    
+    def update_start_point_and_adjacent(self, new_start_pos):
+        """Met à jour le point de départ et son point adjacent"""
+        
+        # Mettre à jour le point de départ
+        old_start = self.points[0]
+        self.points[0] = new_start_pos
+        
+        # S'il y a un point adjacent (index 1)
+        if len(self.points) >= 2:
+            adjacent_point = self.points[1]
+            
+            # Déterminer quelle coordonnée était alignée avec l'ancien port
+            same_x = abs(adjacent_point.x() - old_start.x()) < 1.0
+            same_y = abs(adjacent_point.y() - old_start.y()) < 1.0
+            
+            if same_x:
+                # Le point était aligné horizontalement → maintenir X identique
+                self.points[1] = QPointF(new_start_pos.x(), adjacent_point.y())
+                print(f"📐 Point adjacent au start: alignement X maintenu ({new_start_pos.x():.1f})")
+                
+            elif same_y:
+                # Le point était aligné verticalement → maintenir Y identique  
+                self.points[1] = QPointF(adjacent_point.x(), new_start_pos.y())
+                print(f"📐 Point adjacent au start: alignement Y maintenu ({new_start_pos.y():.1f})")
+                
+            else:
+                print(f"⚠️ Point adjacent au start: pas d'alignement détecté")
+
+    def update_end_point_and_adjacent(self, new_end_pos):
+        """Met à jour le point de fin et son point adjacent"""
+        
+        # Mettre à jour le point de fin
+        old_end = self.points[-1]
+        self.points[-1] = new_end_pos
+        
+        # S'il y a un point adjacent (avant-dernier)
+        if len(self.points) >= 2:
+            adjacent_point = self.points[-2]
+            
+            # Déterminer quelle coordonnée était alignée avec l'ancien port
+            same_x = abs(adjacent_point.x() - old_end.x()) < 1.0
+            same_y = abs(adjacent_point.y() - old_end.y()) < 1.0
+            
+            if same_x:
+                # Le point était aligné horizontalement → maintenir X identique
+                self.points[-2] = QPointF(new_end_pos.x(), adjacent_point.y())
+                print(f"📐 Point adjacent au end: alignement X maintenu ({new_end_pos.x():.1f})")
+                
+            elif same_y:
+                # Le point était aligné verticalement → maintenir Y identique
+                self.points[-2] = QPointF(adjacent_point.x(), new_end_pos.y())
+                print(f"📐 Point adjacent au end: alignement Y maintenu ({new_end_pos.y():.1f})")
+                
+            else:
+                print(f"⚠️ Point adjacent au end: pas d'alignement détecté")
+
+    '''def debug_point_alignment(self):
+        """Debug pour vérifier les alignements"""
+        print("🔍 DEBUG alignements:")
+        for i, point in enumerate(self.points):
+            print(f"  Point {i}: ({point.x():.1f}, {point.y():.1f})")
+        
+        if len(self.points) >= 2:
+            # Vérifier alignement start avec point 1
+            start_point = self.points[0]
+            second_point = self.points[1]
+            same_x = abs(start_point.x() - second_point.x()) < 1.0
+            same_y = abs(start_point.y() - second_point.y()) < 1.0
+            print(f"  Start-Point1: same_X={same_x}, same_Y={same_y}")
+            
+            # Vérifier alignement end avec avant-dernier
+            if len(self.points) >= 2:
+                end_point = self.points[-1]
+                before_end = self.points[-2]
+                same_x = abs(end_point.x() - before_end.x()) < 1.0
+                same_y = abs(end_point.y() - before_end.y()) < 1.0
+                print(f"  End-BeforeEnd: same_X={same_x}, same_Y={same_y}")'''
+
+    '''def get_movement_type(self, old_pos, new_pos):
+        """Détermine le type de mouvement (horizontal, vertical, diagonal)"""
+        delta_x = abs(new_pos.x() - old_pos.x())
+        delta_y = abs(new_pos.y() - old_pos.y())
+        
+        if delta_x > delta_y * 2:
+            return "horizontal"
+        elif delta_y > delta_x * 2:
+            return "vertical"
+        else:
+            return "diagonal"'''
+    
+    '''def reroute_simple_line(self, start_pos: QPointF, end_pos: QPointF):
+        """Re-route une ligne simple en forme de L orthogonal"""
+        
+        # Choisir la direction selon la distance dominante ou préférences
+        dx = abs(end_pos.x() - start_pos.x())
+        dy = abs(end_pos.y() - start_pos.y())
+        
+        if dx > dy:
+            # Mouvement horizontal dominant : horizontal puis vertical
+            middle_point = QPointF(end_pos.x(), start_pos.y())
+        else:
+            # Mouvement vertical dominant : vertical puis horizontal
+            middle_point = QPointF(start_pos.x(), end_pos.y())
+        
+        self.points = [start_pos, middle_point, end_pos]
+        print(f"  📐 Ligne simple re-routée: {len(self.points)} points")'''
+    
+    '''def reroute_l_shape(self, start_pos: QPointF, end_pos: QPointF, 
+                       start_delta: QPointF, end_delta: QPointF):
+        """Re-route une polyligne en L en préservant l'intention originale"""
+        
+        old_middle = self.points[1]
+        
+        # Analyser l'orientation actuelle de la polyligne
+        current_pattern = self.analyze_path_pattern()
+        
+        if current_pattern == "H-V":  # Horizontal puis Vertical
+            # Préserver le pattern : ajuster le point de coude
+            if abs(start_delta.x()) > 0.1:  # Le start a bougé horizontalement
+                # Ajuster le X du point de coude
+                new_middle = QPointF(old_middle.x() + start_delta.x(), old_middle.y())
+            else:
+                # Le end a bougé, ajuster selon le mouvement
+                new_middle = QPointF(old_middle.x(), end_pos.y())
+            
+        elif current_pattern == "V-H":  # Vertical puis Horizontal  
+            # Préserver le pattern : ajuster le point de coude
+            if abs(start_delta.y()) > 0.1:  # Le start a bougé verticalement
+                # Ajuster le Y du point de coude
+                new_middle = QPointF(old_middle.x(), old_middle.y() + start_delta.y())
+            else:
+                # Le end a bougé, ajuster selon le mouvement
+                new_middle = QPointF(end_pos.x(), old_middle.y())
+        
+        else:
+            # Pattern non reconnu : créer un nouveau L optimal
+            self.reroute_simple_line(start_pos, end_pos)
+            return
+        
+        self.points = [start_pos, new_middle, end_pos]
+        print(f"  📐 Forme L re-routée: pattern {current_pattern}")'''
+    
+    '''def reroute_complex_path(self, start_pos: QPointF, end_pos: QPointF,
+                            start_delta: QPointF, end_delta: QPointF):
+        """Re-route une polyligne complexe avec multiple segments"""
+        
+        # Stratégie : ajuster les points en préservant l'orthogonalité
+        new_points = [start_pos]
+        
+        # Analyser quel port a bougé le plus
+        start_movement = abs(start_delta.x()) + abs(start_delta.y())
+        end_movement = abs(end_delta.x()) + abs(end_delta.y())
+        
+        if start_movement > end_movement:
+            # Le start a plus bougé : ajuster depuis le début
+            self.adjust_path_from_start(new_points, start_delta, end_pos)
+        else:
+            # Le end a plus bougé : ajuster depuis la fin
+            self.adjust_path_from_end(new_points, end_delta, end_pos)
+        
+        new_points.append(end_pos)
+        self.points = new_points
+        print(f"  📐 Chemin complexe re-routé: {len(self.points)} points")'''
+    
+    '''def analyze_path_pattern(self) -> str:
+        """Analyse le pattern de la polyligne actuelle"""
+        if len(self.points) < 3:
+            return "DIRECT"
+        
+        # Analyser le premier segment
+        first_segment = QPointF(self.points[1].x() - self.points[0].x(),
+                               self.points[1].y() - self.points[0].y())
+        
+        if abs(first_segment.x()) > abs(first_segment.y()):
+            return "H-V"  # Commence horizontal
+        else:
+            return "V-H"  # Commence vertical'''
+    
+    '''def adjust_path_from_start(self, new_points: List[QPointF], delta: QPointF, end_pos: QPointF):
+        """Ajuste le chemin en partant du début"""
+        
+        # Stratégie simple : propager le delta sur les premiers points
+        for i in range(1, len(self.points) - 1):
+            old_point = self.points[i]
+            
+            # Déterminer quelle coordonnée ajuster selon l'orientation du segment précédent
+            prev_point = new_points[-1] if new_points else self.points[i-1]
+            
+            # Si le segment précédent était horizontal, ajuster X
+            if abs(old_point.x() - prev_point.x()) > abs(old_point.y() - prev_point.y()):
+                new_point = QPointF(old_point.x() + delta.x(), old_point.y())
+            else:
+                # Le segment précédent était vertical, ajuster Y
+                new_point = QPointF(old_point.x(), old_point.y() + delta.y())
+            
+            new_points.append(new_point)
+    
+    def adjust_path_from_end(self, new_points: List[QPointF], delta: QPointF, end_pos: QPointF):
+        """Ajuste le chemin en partant de la fin (plus complexe)"""
+        
+        # Pour l'instant, utiliser une stratégie simple
+        # TODO: Implémenter un algorithme plus sophistiqué si nécessaire
+        
+        # Copier tous les points intermédiaires sans modification
+        for i in range(1, len(self.points) - 1):
+            new_points.append(self.points[i])
+        
+        print(f"  ⚠️ Ajustement depuis la fin : algorithme simple utilisé")'''
+    
+    def update_control_points_positions(self):
+        """Met à jour les positions des points de contrôle"""
+        for i, control_point in enumerate(self.control_points):
+            if i + 1 < len(self.points):  # Points intermédiaires seulement
+                control_point.setPos(self.points[i + 1])
+    
+    def destroy(self):
+        """Nettoie la polyligne avant destruction"""
+        self.unregister_from_connected_equipment()
+        
+        # Nettoyer les points de contrôle
+        for cp in self.control_points:
+            if cp.scene():
+                cp.scene().removeItem(cp)
+        self.control_points.clear()
+
+# =============================================================================
+# Fonctions utilitaires pour la gestion des polylignes
+# =============================================================================
+
+'''def calculate_optimal_orthogonal_path(start: QPointF, end: QPointF, 
+                                    preference: str = "auto") -> List[QPointF]:
+    """Calcule un chemin orthogonal optimal entre deux points"""
+    
+    dx = end.x() - start.x()
+    dy = end.y() - start.y()
+    
+    # Cas trivial : déjà aligné
+    if abs(dx) < 0.1:  # Verticalement aligné
+        return [start, end]
+    elif abs(dy) < 0.1:  # Horizontalement aligné
+        return [start, end]
+    
+    # Choisir la direction selon les préférences ou la distance
+    if preference == "horizontal_first":
+        middle = QPointF(end.x(), start.y())
+        return [start, middle, end]
+    elif preference == "vertical_first":
+        middle = QPointF(start.x(), end.y())
+        return [start, middle, end]
+    else:  # "auto"
+        # Choisir selon la distance dominante
+        if abs(dx) > abs(dy):
+            middle = QPointF(end.x(), start.y())  # Horizontal d'abord
+        else:
+            middle = QPointF(start.x(), end.y())  # Vertical d'abord
+        return [start, middle, end]'''
+
+'''def is_point_orthogonal_to_segment(point: QPointF, seg_start: QPointF, seg_end: QPointF) -> bool:
+    """Vérifie si un point forme un angle droit avec un segment"""
+    
+    # Vecteur du segment
+    seg_vec = QPointF(seg_end.x() - seg_start.x(), seg_end.y() - seg_start.y())
+    
+    # Vecteur vers le point
+    point_vec = QPointF(point.x() - seg_end.x(), point.y() - seg_end.y())
+    
+    # Produit scalaire (doit être proche de 0 pour un angle droit)
+    dot_product = seg_vec.x() * point_vec.x() + seg_vec.y() * point_vec.y()
+    
+    return abs(dot_product) < 1.0  # Tolérance pour les erreurs de calcul'''
+
+'''def validate_orthogonal_path(points: List[QPointF]) -> bool:
+    """Vérifie qu'un chemin est entièrement orthogonal"""
+    
+    if len(points) < 2:
+        return True
+    
+    for i in range(len(points) - 1):
+        p1, p2 = points[i], points[i + 1]
+        
+        # Chaque segment doit être soit horizontal soit vertical
+        dx = abs(p2.x() - p1.x())
+        dy = abs(p2.y() - p1.y())
+        
+        # Un des deux doit être proche de 0
+        if not (dx < 0.1 or dy < 0.1):
+            print(f"⚠️ Segment non-orthogonal détecté: {i}->{i+1}")
+            return False
+    
+    return True'''
+
+'''def optimize_orthogonal_path(points: List[QPointF]) -> List[QPointF]:
+    """Optimise un chemin orthogonal en supprimant les points redondants"""
+    
+    if len(points) <= 2:
+        return points
+    
+    optimized = [points[0]]
+    
+    for i in range(1, len(points) - 1):
+        prev_point = optimized[-1]
+        current_point = points[i]
+        next_point = points[i + 1]
+        
+        # Vérifier si le point courant est nécessaire
+        # (pas sur la même ligne que le précédent et le suivant)
+        
+        # Direction du segment précédent
+        prev_is_horizontal = abs(current_point.y() - prev_point.y()) < 0.1
+        
+        # Direction du segment suivant  
+        next_is_horizontal = abs(next_point.y() - current_point.y()) < 0.1
+        
+        # Garder le point seulement s'il y a changement de direction
+        if prev_is_horizontal != next_is_horizontal:
+            optimized.append(current_point)
+        else:
+            print(f"📐 Point redondant supprimé à l'index {i}")
+    
+    optimized.append(points[-1])
+    return optimized'''
 
 # =============================================================================
 # CLASSE POUR LES POINTS DE CONTRÔLE
@@ -269,7 +697,7 @@ class PolylineControlPoint(QGraphicsEllipseItem):
 # FONCTIONS UTILITAIRES
 # =============================================================================
 
-def create_polyline_from_ports(start_port, end_port, intermediate_points: List[QPointF] = None) -> PolylineGraphicsItem:
+'''def create_polyline_from_ports(start_port, end_port, intermediate_points: List[QPointF] = None) -> PolylineGraphicsItem:
     """Crée une polyligne entre deux ports avec points intermédiaires optionnels"""
     
     points = [start_port.scenePos()]
@@ -306,4 +734,4 @@ def calculate_orthogonal_path(start: QPointF, end: QPointF, mode="auto") -> List
             # Distance verticale plus grande : vertical d'abord
             middle = QPointF(start.x(), end.y())
         
-        return [start, middle, end]
+        return [start, middle, end]'''

@@ -12,13 +12,13 @@
   <defs
      id="defs1" />
   <circle
-     style="fill:#e6e6e6;stroke:none;stroke-width:1.70053;stroke-dasharray:none"
+     style="opacity:0;"
      id="Port2"
      cx="3.96875"
      cy="0.52916664"
      r="0.52916664" />
   <circle
-     style="fill:#e6e6e6;stroke:none;stroke-width:1.70053;stroke-dasharray:none"
+     style="opacity:0;"
      id="Port1"
      cx="3.96875"
      cy="7.4083333"

@@ -12,7 +12,14 @@
         "vannes_arret": {
           "display_name": "Vannes d'arrêt",
           "equipment_items": [
-            "vannes_arret"
+            "vanne_boisseau",
+            "vanne_arret"
+          ]
+        },
+        "vannes_reglage": {
+          "display_name": "Vannes de Régulation",
+          "equipment_items": [
+            "vannes_3V_p"
           ]
         },
         "vannes_equilibrage": {
@@ -54,6 +61,12 @@
         "Fixed_pressure",
         "Fixed_flowrate"
       ]
+    },
+    "Junctions": {
+      "display_name": "Jonctions",
+      "equipment_items": [
+        "junction_3pipes"
+      ]
     }
   },
 
@@ -64,16 +77,28 @@
       "icon_svg": "icons/pompes/pompe_simple.svg",
       "color": "#FF6B6B"
     },
-    "vannes_arret": {
+    "vanne_arret": {
       "display_name": "Vanne d'arrêt",
       "description": "vanne d'arrêt",
-      "icon_svg": "icons/vannes/vannes_arret.svg",
+      "icon_svg": "icons/vannes/V_arret.svg",
+      "color": "#FF6B6B"
+    },
+    "vanne_boisseau": {
+      "display_name": "Vanne à Boisseau",
+      "description": "vanne à boisseau",
+      "icon_svg": "icons/vannes/V_boisseau.svg",
       "color": "#FF6B6B"
     },
     "vannes_equilibrage": {
       "display_name": "Vanne d'Équilibrage",
       "description": "vanne d'équilibrage",
       "icon_svg": "icons/vannes/vannes_equilibrage.svg",
+      "color": "#FF6B6B"
+    },
+    "vannes_3V_p": {
+      "display_name": "Vanne 3 voies, progressive",
+      "description": "vanne 3 voies, progressive",
+      "icon_svg": "icons/vannes/V3V_M.svg",
       "color": "#FF6B6B"
     },
     "consommateur_1_1": {
@@ -116,6 +141,12 @@
       "display_name": "Débit Fixe",
       "description": "Condition limite de débit fixe",
       "icon_svg": "icons/boundary/fixed_flowrate.svg",
+      "color": "#1E90FF"
+    },
+    "junction_3pipes": {
+      "display_name": "Jonction 3 Tuyaux",
+      "description": "Jonction pour 3 tuyaux",
+      "icon_svg": "icons/connexions/connexion_3pipes.svg",
       "color": "#1E90FF"
     }
   }
