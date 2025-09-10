@@ -27,9 +27,11 @@ from .pipe_style_manager import pipe_style_manager
 class PolylineGraphicsItem(QGraphicsPathItem):
     """Élément graphique représentant une polyligne de connexion"""
     
-    def __init__(self, points: List[QPointF], start_port=None, end_port=None):
+    def __init__(self, points: List[QPointF], start_port=None, end_port=None, pipe_id = None):
         super().__init__()
         
+        self.pipe_id = pipe_id  # Identifiant unique de la polyligne
+        self.pipe_def = {}  # Définition de la polyligne (à compléter plus tard)
         self.points = points.copy()
         self.start_port = start_port
         self.end_port = end_port
@@ -59,7 +61,13 @@ class PolylineGraphicsItem(QGraphicsPathItem):
         
         # Créer les points de contrôle (cachés initialement)
         self.create_control_points()
-    
+
+        self.pipe_def["properties"] = {
+            "length_m": "10",
+            "diameter_m": "0.2",
+            "roughness_mm": "0.1"
+        }
+
     def update_path(self):
         """Met à jour le chemin graphique à partir des points"""
         if len(self.points) < 2:
@@ -479,6 +487,12 @@ class PolylineGraphicsItem(QGraphicsPathItem):
             if cp.scene():
                 cp.scene().removeItem(cp)
         self.control_points.clear()
+
+    def update_properties(self, new_def: dict):
+        """Met à jour les propriétés de l'équipement"""
+        #seules les propriétés editables sont mises à jour
+        self.pipe_def['properties'].update(new_def)
+        print(f"🔧 Propriétés mises à jour pour {self.pipe_id}: {new_def}")
 
 # =============================================================================
 # Fonctions utilitaires pour la gestion des polylignes

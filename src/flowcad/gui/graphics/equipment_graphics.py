@@ -836,6 +836,12 @@ class EquipmentGraphicsItem(QGraphicsItem):
 
         print(f"🔄 {len(self.connected_polylines)} polylignes mises à jour pour {self.equipment_id}")
 
+    def update_properties(self, new_def: dict):
+        """Met à jour les propriétés de l'équipement"""
+        #seules les propriétés editables sont mises à jour
+        self.equipment_def['properties'].update(new_def)
+        print(f"🔧 Propriétés mises à jour pour {self.equipment_id}: {new_def}")
+
 
 
 # =============================================================================
@@ -846,8 +852,8 @@ class EquipmentGraphicsFactory:
     """Factory pour créer les équipements graphiques selon leur type"""
     
     @staticmethod
-    def create_equipment_graphics(equipment_id: str, equipment_def: dict, 
+    def create_equipment_graphics(equipment_id: str, equipment_def: dict,
                                 svg_path: str = None) -> EquipmentGraphicsItem:
         """Crée un équipement graphique selon sa définition"""
-        
+
         return EquipmentGraphicsItem(equipment_id, equipment_def, svg_path)

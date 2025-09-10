@@ -3,6 +3,7 @@ Classe simple pour charger la configuration des équipements depuis JSON
 """
 import json
 import os
+import importlib
 from typing import Dict, Any, List
 
 from pathlib import Path
@@ -44,11 +45,41 @@ class EquipmentLoader:
         definitions = self.get_equipment_definitions()
         return definitions.get(equipment_id, {})
     
-    #fonction qui retourne la liste des équipements pour une catégorie
-    def get_equipment_items_for_category(self, category_data: Dict[str, any]) -> List[str]:
+    def get_single_equipment_properties(self, equipment_id: str) ->  Dict[str, Any]:
+        """Retourne une propriété spécifique d'un équipement"""
+        definition = self.get_single_equipment_definition(equipment_id)
+        return definition.get('properties', {})
 
-        return category_data.get('equipment_items', [])
+    #Fonction qui retourne le nom de la classe d'un équipement
+    def get_equipment_class_name(self, equipment_id: str) -> str:
+        """Retourne la classe d'un équipement spécifique"""
+        definition = self.get_single_equipment_definition(equipment_id)
+        return definition.get('equipment_class', 'BaseEquipment')
     
+    #Fonction qui crée une instanance de la classe d'un équipement
+    def create_equipment_instance(self, equipment_id: str, **kwargs) -> Any:
+        """Factory method pour créer une instance d'équipement"""
+        class_name = self.get_equipment_class_name(equipment_id)
+        # Import dynamique du module contenant les classes d'équipements
+        # Adaptez le nom du module selon votre structure
+        try:
+            equipment_module = importlib.import_module('src.flowcad.models.equipment.equipment_classes')
+            equipment_class = getattr(equipment_module, class_name)
+            
+            # Récupérer les propriétés par défaut
+            default_properties = self.get_single_equipment_properties(equipment_id)
+            print(f"🔍 Création de {class_name} avec propriétés: {default_properties}")
+
+            # Créer l'instance
+            return equipment_class(id=equipment_id, **default_properties)
+
+        except (ImportError, AttributeError) as e:
+            print(f"Erreur lors de la création de {class_name}: {e}")
+            # Fallback sur BaseEquipment
+            from src.flowcad.models.equipment import BaseEquipment
+            return BaseEquipment(id=equipment_id, **kwargs)
+
+    #Fonction qui retourne le chemin complet vers le fichier SVG d'un équipement
     def get_svg_path(self, equipment_id: str) -> str:
         """Retourne le chemin complet vers le fichier SVG"""
         definition = self.get_single_equipment_definition(equipment_id)
@@ -71,3 +102,6 @@ if __name__ == "__main__":
     print("Définitions:", json.dumps(definitions, indent=2, ensure_ascii=False))
     print("Équipement spécifique:", json.dumps(loader.get_single_equipment_definition("pompe_simple"), indent=2, ensure_ascii=False))
     print("Chemin SVG:", loader.get_svg_path("pompe_simple"))
+    print("Propriétés spécifiques:", json.dumps(loader.get_single_equipment_properties("pompe_simple"), indent=2, ensure_ascii=False))
+    test = loader.create_equipment_instance("pompe_simple")
+    print("Instance d'équipement créée:", test)

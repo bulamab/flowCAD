@@ -11,6 +11,13 @@ from ..hydraulic_converter import *
 
 """Classe pour les équipements actifs (ex: pompes, vannes)"""
 
+#----------------------------------------------------------------#
+#equipements actifs:
+#- PupmpEquipment: une pompe avec une courbe caractéristique
+#- PressureBoundaryConditionEquipment: une condition aux limites de type pression (réservoir)
+#- FlowRateBoundaryConditionEquipment: une condition aux limites de type débit volumique (entrée/sortie de fluide)
+#- HydraulicResistanceEquipment: une résistance hydraulique singulière (consommateur de chaleur, producteur de chaleur, etc. )
+
 #===============================================================================================================================================
 #Classe pour une pompe---------------------------------------------------------------------------------------------
 #===============================================================================================================================================

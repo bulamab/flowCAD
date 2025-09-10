@@ -10,6 +10,7 @@ from enum import Enum
 
 from .components.ribbon_toolbar import RibbonToolbar
 from .components.Left_panel import LeftPanel
+from .components.right_panel import RightPanel
 from .components.drawing_canvas import DrawingCanvas
 from ..config.equipment.equipment_loader import EquipmentLoader
 from .components.mode_panels.connection_panel import ConnectionPanel
@@ -43,6 +44,7 @@ class FlowCADMainWindow(QMainWindow):
         self.drawing_canvas.equipment_dropped.connect(self.on_equipment_dropped)
         self.drawing_canvas.equipment_selected.connect(self.on_equipment_selected)
         self.drawing_canvas.port_selected.connect(self.on_port_selected)
+        #self.drawing_canvas.pipe_properties_requested.connect(self.on_pipe_properties_requested)
         
 
         self.setup_ui()
@@ -76,6 +78,13 @@ class FlowCADMainWindow(QMainWindow):
         panels_layout.addWidget(self.Left_panel)
         self.Left_panel.get_connection_panel().connection_mode_changed.connect(self.on_connection_mode_changed)
         self.Left_panel.get_connection_panel().ports_visibility_changed.connect(self.on_ports_visibility_changed)
+        # Quand le canvas demande les propriétés -> le panneau les envoie
+        self.drawing_canvas.pipe_properties_requested.connect(
+            self.Left_panel.get_connection_panel().send_pipe_properties
+        )
+        # Quand le panneau envoie les propriétés -> le canvas les reçoit
+        self.Left_panel.get_connection_panel().pipe_properties_response.connect(
+            self.drawing_canvas.pipe_properties_received)
 
         # Connecter le signal de fin de création de polyligne
         self.drawing_canvas.polyline_creation_finished.connect(self.on_polyline_creation_finished)
@@ -83,6 +92,16 @@ class FlowCADMainWindow(QMainWindow):
         # Zone de dessin au centre
         #self.drawing_canvas = DrawingCanvas(self)
         panels_layout.addWidget(self.drawing_canvas)
+
+        #panneau des proporiétés à droite
+        self.Right_panel = RightPanel(self)
+        panels_layout.addWidget(self.Right_panel)
+        # Connecter le signal d'équipement sélectionné pour charger les propriétés
+        self.drawing_canvas.equipment_properties_requested.connect(self.Right_panel.display_properties)
+        self.Right_panel.equipment_update_requested.connect(self.update_equipment_properties)
+        self.Right_panel.pipe_update_requested.connect(self.update_pipe_properties)
+
+        
 
         # Ajouter le layout des panneaux au layout principal
         main_layout.addLayout(panels_layout)
@@ -175,7 +194,23 @@ class FlowCADMainWindow(QMainWindow):
         status_msg = "affichés" if visible else "cachés"
         self.statusBar().showMessage(f"Ports connectés {status_msg}", 2000)
 
+    #fonctions liées au changement des propriétés des éleéments via le panel de droite
+    def update_equipment_properties(self, equipment_id, updated_properties):
+        """Met à jour les propriétés d'un équipement donné"""
+        print(f"🔄 Mise à jour des propriétés de {equipment_id}: {updated_properties}")
+        self.drawing_canvas.update_equipment_properties(equipment_id=equipment_id, new_properties=updated_properties)
 
+    #fonction liées au changement des proporiétés des pipes via le panel de droite
+    def update_pipe_properties(self, pipe_id, updated_properties):
+        """Met à jour les propriétés d'un tuyau donné"""
+        print(f"🔄 Mise à jour des propriétés du tuyau {pipe_id}: {updated_properties}")
+        self.drawing_canvas.update_pipe_properties(pipe_id=pipe_id, new_properties=updated_properties)
+
+    '''def on_pipe_properties_requested(self):
+        """Callback pour fournir les propriétés du tuyau au canvas"""
+        connection_panel = self.Left_panel.get_connection_panel()
+        properties = connection_panel.get_pipe_properties()
+        self.drawing_canvas.cached_pipe_properties = properties'''
 
 def main():
     """Point d'entrée de l'application GUI"""

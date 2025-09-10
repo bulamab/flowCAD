@@ -1,11 +1,13 @@
 """
 Panneau des connexions
 """
+from tokenize import group
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QLabel, QPushButton, 
                             QListWidget, QListWidgetItem, QHBoxLayout,
-                            QGroupBox, QComboBox)
+                            QGroupBox, QComboBox, QFormLayout, QLineEdit)
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QFont
+from typing import Dict
 
 class ConnectionPanel(QWidget):
     """Panneau pour gérer les connexions entre équipements"""
@@ -13,6 +15,12 @@ class ConnectionPanel(QWidget):
     # Signaux émis par le panneau
     connection_mode_changed = pyqtSignal(str)
     ports_visibility_changed = pyqtSignal(bool)
+
+    pipe_properties_response = pyqtSignal(dict)
+
+    DEFAULT_DIAMETER = 0.1  # m
+    DEFAULT_LENGTH = 1.0    # m
+    DEFAULT_ROUGHNESS = 0.1  # mm
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -53,7 +61,7 @@ class ConnectionPanel(QWidget):
         """Configure l'interface du panneau connexions"""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(5)
+        layout.setSpacing(20)
         
         # === TITRE ===
         title = QLabel("Gestion des Connexions")
@@ -81,6 +89,29 @@ class ConnectionPanel(QWidget):
         self.show_connected_ports_cb.setChecked(False)  # Cachés par défaut
         self.show_connected_ports_cb.toggled.connect(self.on_show_ports_toggled)
         layout.addWidget(self.show_connected_ports_cb)
+
+        # --- Groupe de propriétés ---
+        group = QGroupBox("Propriétés du tuyau")
+
+        #les propiétés: 
+        self.diametre_edit = QLineEdit()
+        self.diametre_edit.setText(str(self.DEFAULT_DIAMETER))
+        self.longueur_edit = QLineEdit()
+        self.longueur_edit.setText(str(self.DEFAULT_LENGTH))
+        self.roughness_edit = QLineEdit()
+        self.roughness_edit.setText(str(self.DEFAULT_ROUGHNESS))
+
+        # Forcer fond blanc
+        for edit in (self.diametre_edit, self.longueur_edit, self.roughness_edit):
+            edit.setStyleSheet("background-color: white;")
+        # Layout interne du groupe
+        form_layout = QFormLayout()
+        form_layout.addRow(QLabel("Diamètre (m) :"), self.diametre_edit)
+        form_layout.addRow(QLabel("Longueur (m) :"), self.longueur_edit)
+        form_layout.addRow(QLabel("Rugosité (mm) :"), self.roughness_edit)
+
+        group.setLayout(form_layout)
+        layout.addWidget(group)
 
         layout.addStretch()  # pousse tout vers le haut
 
@@ -129,3 +160,17 @@ class ConnectionPanel(QWidget):
     def is_in_create_mode(self):
         """Vérifie si le panneau est en mode création"""
         return self.current_mode == "create"
+    #obtenir les propriétés du tuyau
+    def get_pipe_properties(self) -> Dict[str, float]:
+        """Retourne les propriétés du tuyau"""
+        return {
+            "diameter_m": float(self.diametre_edit.text()),
+            "length_m": float(self.longueur_edit.text()),
+            "roughness_mm": float(self.roughness_edit.text())
+        }
+    
+    def send_pipe_properties(self):
+        """Envoie les propriétés actuelles du tuyau"""
+        properties = self.get_pipe_properties()
+        self.pipe_properties_response.emit(properties)
+        print(f"Propriétés envoyées : {properties}")

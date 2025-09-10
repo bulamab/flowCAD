@@ -10,6 +10,11 @@ from ..hydraulic_converter import *
 
 """Classe pour les connections entre équipements"""
 
+#défintion des équipements de connection (tuyaux, Té, coudes, etc.)
+#- PipeConnectionEquipment: un tuyau de connection entre deux équipements
+#- TeeConnectionEquipment: un Té de connection entre trois équipements
+
+
 #===============================================================================================================================================
 #tuyau de connection entre deux équipements---------------------------------------------------------------------------------------------
 #===============================================================================================================================================

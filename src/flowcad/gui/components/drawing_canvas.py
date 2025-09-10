@@ -26,6 +26,12 @@ class DrawingCanvas(QGraphicsView):
     equipment_deleted = pyqtSignal(str)               # equipment_id
     port_selected = pyqtSignal(str, str)              # (equipment_id, port_id)
 
+    #pipe_properties_requested = pyqtSignal()          # Signal émis lorsque les propriétés du tuyau sont demandées
+    equipment_properties_requested = pyqtSignal(dict, str)  # Envoie directement les données de l'équipement sélectionné
+    pipe_properties_requested = pyqtSignal()  # Demande les propriétés
+    pipe_properties_received = pyqtSignal(dict)  # Reçoit les propriétés
+
+
     polyline_creation_finished = pyqtSignal()         # Signal émis lorsque la création de la polyligne est terminée
 
     def __init__(self, parent=None):
@@ -54,6 +60,8 @@ class DrawingCanvas(QGraphicsView):
         self.start_port = None        # Port de départ
         self.preview_line = None      # Ligne de prévisualisation
         self.is_creating_polyline = False  # Flag de création active
+        self.cached_pipe_properties = None  # Pour stocker les propriétés du tuyau en cours de création
+        self.current_pipe_properties = None  # Pour stocker les propriétés du tuyau en cours de création
 
         # Variables pour le routage de polylignes
         self.orthogonal_routing_enabled = True
@@ -62,93 +70,17 @@ class DrawingCanvas(QGraphicsView):
         self.routing_tolerance = 0.1     # Tolérance pour l'orthogonalité
 
         # Liste des polylignes créées
-        self.polylines: List[PolylineGraphicsItem] = []
+        self.polyline_counter = 0
+        #self.polylines: List[PolylineGraphicsItem] = []
+        self.polylines: Dict[str, PolylineGraphicsItem] = {}
         #variables pour la création de polylignes
         self.locked_direction = None        # "horizontal", "vertical", ou None
         self.direction_lock_threshold = 10  # Distance minimale pour verrouiller la direction
 
         #self.init_pipe_style_sync() #plus besoin, se fait automatiquement
-    
-    '''def init_pipe_style_sync(self):
-        """Initialise la synchronisation des styles de tuyaux"""
+        # Connecter le signal de réception des propriétés
+        self.pipe_properties_received.connect(self.on_pipe_properties_received)
         
-        # Créer une polyligne temporaire pour extraire les styles par défaut
-        
-        temp_points = [QPointF(0, 0), QPointF(100, 0)]
-        temp_polyline = PolylineGraphicsItem(temp_points)
-        
-        # Synchroniser les styles
-        pipe_style_manager.sync_with_polyline_styles(temp_polyline)
-        
-        print("🎨 Synchronisation initiale des styles tuyaux effectuée")'''
-    
-    #méthodes inutilisées maintenant
-    '''def update_pipe_styles(self, normal_color: str = None, normal_width: int = None,
-                          selected_color: str = None, selected_width: int = None,
-                          hover_color: str = None, hover_width: int = None):
-        """Met à jour les styles globaux des tuyaux"""
-        
-        if normal_color or normal_width:
-            style_updates = {}
-            if normal_color:
-                style_updates['stroke'] = normal_color
-            if normal_width:
-                style_updates['stroke-width'] = str(normal_width)
-            pipe_style_manager.set_pipe_style('normal', **style_updates)
-        
-        if selected_color or selected_width:
-            style_updates = {}
-            if selected_color:
-                style_updates['stroke'] = selected_color
-            if selected_width:
-                style_updates['stroke-width'] = str(selected_width)
-            pipe_style_manager.set_pipe_style('selected', **style_updates)
-        
-        if hover_color or hover_width:
-            style_updates = {}
-            if hover_color:
-                style_updates['stroke'] = hover_color
-            if hover_width:
-                style_updates['stroke-width'] = str(hover_width)
-            pipe_style_manager.set_pipe_style('hover', **style_updates)
-        
-        # Mettre à jour toutes les polylignes existantes pour synchroniser
-        self.sync_polyline_styles_with_manager()
-    
-    def sync_polyline_styles_with_manager(self):
-        """Synchronise les styles des polylignes avec le gestionnaire"""
-        
-        normal_style = pipe_style_manager.get_pipe_style('normal')
-        selected_style = pipe_style_manager.get_pipe_style('selected')
-        hover_style = pipe_style_manager.get_pipe_style('hover')
-        
-        for polyline in self.polylines:
-            # Mettre à jour les pens de la polyligne
-            from PyQt5.QtGui import QPen, QColor
-            
-            # Pen normal
-            normal_color = QColor(normal_style['stroke'])
-            normal_width = int(normal_style['stroke-width'])
-            polyline.normal_pen = QPen(normal_color, normal_width)
-            
-            # Pen sélectionné
-            selected_color = QColor(selected_style['stroke'])
-            selected_width = int(selected_style['stroke-width'])
-            polyline.selected_pen = QPen(selected_color, selected_width)
-            
-            # Pen hover
-            hover_color = QColor(hover_style['stroke'])
-            hover_width = int(hover_style['stroke-width'])
-            polyline.hover_pen = QPen(hover_color, hover_width)
-            
-            # Appliquer le pen approprié selon l'état actuel
-            if polyline.isSelected():
-                polyline.setPen(polyline.selected_pen)
-            else:
-                polyline.setPen(polyline.normal_pen)
-        
-        print(f"🔄 Styles synchronisés pour {len(self.polylines)} polylignes")'''
-
     # Ajouter des méthodes utilitaires pour les contrôles UI
 
     def set_pipe_color_theme(self, theme: str):
@@ -293,19 +225,21 @@ class DrawingCanvas(QGraphicsView):
             # Décoder les données de l'équipement
             json_data = event.mimeData().data('application/x-flowcad-equipment').data().decode()
             equipment_data = json.loads(json_data)
+            print("🎯 Drop reçu:", equipment_data)
             
             equipment_id = equipment_data['equipment_id']
             equipment_def = equipment_data['equipment_def']
-            
+            equipment_properties = equipment_def.get('properties', {})
+
             # Position du drop en coordonnées de scène
             scene_pos = self.mapToScene(event.pos())
             drop_position = (scene_pos.x(), scene_pos.y())
             
             # Aligner sur la grille (optionnel)
             aligned_pos = self.align_to_grid(scene_pos)
-            
-            print(f"🎯 Drop de {equipment_id} à la position {aligned_pos.x():.1f}, {aligned_pos.y():.1f}")
-            
+
+            print(f"🎯 Drop de {equipment_id} à la position {aligned_pos.x():.1f}, {aligned_pos.y():.1f}\nPropriétés de l'équipement: {json.dumps(equipment_properties, indent=2, ensure_ascii=False)}")
+
             # Créer l'équipement sur le canvas
             self.add_equipment(equipment_id, equipment_def, aligned_pos)
             
@@ -566,41 +500,31 @@ class DrawingCanvas(QGraphicsView):
         points_copy = self.polyline_points.copy()
         # Ajouter des points si seulement 2 points
         enhanced_points = self.add_intermediate_points_if_needed(points_copy)
-        
-        '''# ✅ AMÉLIORATION : Optimiser le chemin si nécessaire
-        if self.routing_optimization:
-            original_count = len(self.polyline_points)
-            self.polyline_points = optimize_orthogonal_path(self.polyline_points)
-            optimized_count = len(self.polyline_points)
-            
-            if optimized_count < original_count:
-                print(f"📐 Chemin optimisé: {original_count} → {optimized_count} points")
-        
-        # Valider l'orthogonalité
-        if self.orthogonal_routing_enabled:
-            if not validate_orthogonal_path(self.polyline_points):
-                print("⚠️ Chemin non-orthogonal détecté - correction appliquée")
-                # Corriger si nécessaire
-                start_pos = self.polyline_points[0]
-                end_pos = self.polyline_points[-1]
-                self.polyline_points = calculate_optimal_orthogonal_path(
-                    start_pos, end_pos, self.routing_preference
-                )'''
-        
+                
         # Supprimer la polyligne de prévisualisation
         if self.current_polyline:
             self.scene.removeItem(self.current_polyline)
             self.current_polyline = None
-        
+
+        # Générer un ID unique pour cette instance
+        unique_pipe_id = f"pipe_{self.polyline_counter:03d}"
+        self.polyline_counter += 1
+
         # Créer la polyligne finale
         final_polyline = PolylineGraphicsItem(
             enhanced_points, 
             self.start_port, 
-            end_port
+            end_port,
+            pipe_id=unique_pipe_id
         )
         
+        #modifier les propriétés par défaut
+        pipe_properties = self.request_pipe_properties()
+        print(f"Propriétés du tuyau : {pipe_properties}")
+        final_polyline.update_properties(pipe_properties or {})
+
         self.scene.addItem(final_polyline)
-        self.polylines.append(final_polyline)
+        self.polylines[unique_pipe_id] = final_polyline
         
         # Marquer les ports comme connectés
         self.start_port.set_connection_status(PortConnectionStatus.CONNECTED)
@@ -735,11 +659,33 @@ class DrawingCanvas(QGraphicsView):
         self.routing_optimization = not self.routing_optimization
         print(f"📐 Optimisation des chemins: {'ON' if self.routing_optimization else 'OFF'}")
         return self.routing_optimization
+
+    def request_pipe_properties(self) -> Dict[str, float]:
+        """Demande les propriétés du tuyau au panneau de connexion"""
+        # Émettre le signal de demande
+        self.pipe_properties_requested.emit()
+        
+        # Retourner les propriétés actuelles (ou valeurs par défaut)
+        if self.current_pipe_properties:
+            return self.current_pipe_properties
+        else:
+            # Valeurs par défaut si pas encore reçues
+            return {
+                "diameter_m": 0.1,
+                "length_m": 1.0,
+                "roughness_mm": 0.1
+            }
     
+    def on_pipe_properties_received(self, properties):
+        """Callback quand les propriétés du tuyau sont reçues"""
+        self.current_pipe_properties = properties
+        print(f"Propriétés du tuyau reçues : {properties}")
+
+
     # =============================================================================
     # GESTION DES ÉQUIPEMENTS
     # =============================================================================
-    
+
     def add_equipment(self, equipment_type: str, equipment_def: dict, position: QPointF) -> str:
         """Ajoute un équipement sur le canvas"""
         
@@ -771,9 +717,9 @@ class DrawingCanvas(QGraphicsView):
         
         # Connecter les signaux des ports (si nécessaire)
         self.connect_equipment_signals(equipment_item)
-        
-        print(f"✅ Équipement {unique_id} ajouté à {position.x():.1f}, {position.y():.1f}")
-        
+
+        print(f"✅ Équipement {unique_id} ajouté à {position.x():.1f}, {position.y():.1f} avec définition: {json.dumps(equipment_def, ensure_ascii=False)}")
+
         return unique_id
     
     def connect_equipment_signals(self, equipment_item: EquipmentGraphicsItem):
@@ -813,6 +759,10 @@ class DrawingCanvas(QGraphicsView):
         """Récupère un équipement par son ID"""
         return self.equipment_items.get(equipment_id)
     
+    def get_pipe(self, pipe_id: str) -> Optional[PolylineGraphicsItem]:
+        """Récupère un tuyau par son ID"""
+        return self.polylines.get(pipe_id)
+    
     def get_all_equipment(self) -> Dict[str, EquipmentGraphicsItem]:
         """Récupère tous les équipements"""
         return self.equipment_items.copy()
@@ -821,7 +771,31 @@ class DrawingCanvas(QGraphicsView):
         """Supprime tous les équipements"""
         for equipment_id in list(self.equipment_items.keys()):
             self.remove_equipment(equipment_id)
-    
+
+    def update_equipment_properties(self, equipment_id: str, new_properties: dict):
+        """Met à jour les propriétés d'un équipement"""
+        
+        equipment_item = self.get_equipment(equipment_id)
+        if equipment_item:
+            equipment_item.update_properties(new_properties)
+            print(f"🔧 Propriétés de {equipment_id} mises à jour: {json.dumps(new_properties, ensure_ascii=False)}")
+            return True
+        else:
+            print(f"⚠️ Équipement {equipment_id} non trouvé pour mise à jour")
+            return False
+
+    def update_pipe_properties(self, pipe_id: str, new_properties: dict):
+        """Met à jour les propriétés d'un tuyau"""
+        pipe_item = self.get_pipe(pipe_id)
+        if pipe_item:
+            pipe_item.update_properties(new_properties)
+            print(f"🔧 Propriétés du tuyau {pipe_id} mises à jour: {json.dumps(new_properties, ensure_ascii=False)}")
+            return True
+        else:
+            print(f"⚠️ Tuyau {pipe_id} non trouvé pour mise à jour")
+            return False
+
+
     # =============================================================================
     # GESTION DE LA SÉLECTION
     # =============================================================================
@@ -830,6 +804,39 @@ class DrawingCanvas(QGraphicsView):
         """Callback quand la sélection change dans la scène"""
         
         selected_items = self.scene.selectedItems()
+
+        #gestion de l'affichage des propriétés dans le panneau latéral -----------------------------------
+        #propriétés affichées uniquement si 1 élément est sélectionné. si 0 ou plusieurs, panneau vide
+        #regarde si il y a un equipement ou un tuyau sélectionné
+        equipment_or_pipe_items = [item for item in selected_items if isinstance(item, (EquipmentGraphicsItem, PolylineGraphicsItem))]
+
+        #si un seul équipement sélectionné, affiche ses propriétés
+        if len(equipment_or_pipe_items) == 1:
+            properties_data = {}
+            #si l'équipement est un tuyau
+            if isinstance(equipment_or_pipe_items[0], PolylineGraphicsItem):
+                pipe = equipment_or_pipe_items[0]
+                properties_data = pipe.pipe_def
+                properties_data["ID"] = pipe.pipe_id
+                properties_data["display_name"] = "Tuyau"
+                properties_data["description"] = "Tuyau de connexion"
+                properties_data["equipment_class"] = "PipeConnectionEquipment"
+
+                self.equipment_properties_requested.emit(properties_data, "pipe")
+            else:  # si l'équipement est un équipement standard
+                equipment = equipment_or_pipe_items[0]
+                properties_data = equipment.equipment_def
+                properties_data["ID"] = equipment.equipment_id
+                print(f"📋 Affichage des propriétés de {equipment.equipment_id}")
+                self.equipment_properties_requested.emit(properties_data, "equipment")
+
+        #si 0 ou plusieurs, pas de propriétés affichées
+        else:  #0 ou plusieurs équipements sélectionnés
+            print("📋 Aucune propriété affichée (0 ou plusieurs équipements sélectionnés)")
+            self.equipment_properties_requested.emit({}, "none")
+
+
+
         #afficher tous les éléments sélectionnés
         eq_id_in_list = []
         for item in selected_items:

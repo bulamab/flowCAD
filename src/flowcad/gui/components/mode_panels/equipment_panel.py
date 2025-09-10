@@ -20,10 +20,11 @@ from ....config.equipment.equipment_loader import EquipmentLoader
 class DraggableEquipmentWidget(QFrame):
     """Widget d'équipement qui peut être dragué"""
     
-    def __init__(self, equipment_id: str, equipment_def: dict, parent=None):
+    def __init__(self, equipment_id: str, equipment_def: dict, equipment_properties: dict, parent=None):
         super().__init__(parent)
         self.equipment_id = equipment_id
         self.equipment_def = equipment_def
+        self.equipment_properties = equipment_properties
         self.equipment_loader = EquipmentLoader()
         
         self.setFixedSize(80, 90)
@@ -266,10 +267,11 @@ class EquipmentPanel(QWidget):
         for equipment_id in equipment_list:
             # Récupérer les infos de l'équipement
             equipment_def = self.equipment_loader.get_single_equipment_definition(equipment_id)
-            
+            equipment_properties = self.equipment_loader.get_single_equipment_properties(equipment_id)
+
             if equipment_def:
                 # Créer le widget pour cet équipement
-                draggable_widget = DraggableEquipmentWidget(equipment_id, equipment_def)
+                draggable_widget = DraggableEquipmentWidget(equipment_id, equipment_def, equipment_properties)
                 self.icons_layout.addWidget(draggable_widget, row, col)
 
                 col += 1
@@ -277,13 +279,13 @@ class EquipmentPanel(QWidget):
                     col = 0
                     row += 1
     
-    def on_equipment_clicked(self, equipment_id: str, equipment_def: Dict[str, Any]):
+    def on_equipment_clicked(self, equipment_id: str, equipment_def: Dict[str, Any], equipment_properties: Dict[str, Any]):
         """Callback quand un équipement est cliqué"""
         
         display_name = equipment_def.get('display_name', equipment_id)
         print(f"Équipement cliqué: {equipment_id} -> {display_name}")
         
         # Émettre le signal
-        self.equipment_selected.emit(equipment_id, display_name)
+        self.equipment_selected.emit(equipment_id, display_name, equipment_properties)
 
 

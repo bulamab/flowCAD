@@ -19,7 +19,8 @@
         "vannes_reglage": {
           "display_name": "Vannes de Régulation",
           "equipment_items": [
-            "vannes_3V_p"
+            "vannes_3V_M_p",
+            "vannes_3V_D_p"
           ]
         },
         "vannes_equilibrage": {
@@ -75,79 +76,168 @@
       "display_name": "Pompe",
       "description": "pompe centrifuge",
       "icon_svg": "icons/pompes/pompe_simple.svg",
-      "color": "#FF6B6B"
+      "color": "#FF6B6B",
+      "equipment_class": "PumpEquipment",
+      "properties": {
+        "curve_points": [[20, 10]],
+        "elevation": 0.0
+      }
     },
     "vanne_arret": {
       "display_name": "Vanne d'arrêt",
       "description": "vanne d'arrêt",
       "icon_svg": "icons/vannes/V_arret.svg",
-      "color": "#FF6B6B"
+      "color": "#FF6B6B",
+      "equipment_class": "HydraulicResistanceEquipment",
+      "properties": {
+        "prop1": 100.0,
+        "prop2": 50.0,
+        "prop3": 0.75
+      }
     },
     "vanne_boisseau": {
       "display_name": "Vanne à Boisseau",
       "description": "vanne à boisseau",
       "icon_svg": "icons/vannes/V_boisseau.svg",
-      "color": "#FF6B6B"
+      "color": "#FF6B6B",
+      "equipment_class": "HydraulicResistanceEquipment",
+      "properties": {
+        "prop1": 100.0,
+        "prop2": 50.0,
+        "prop3": 0.75
+      }
     },
     "vannes_equilibrage": {
       "display_name": "Vanne d'Équilibrage",
       "description": "vanne d'équilibrage",
       "icon_svg": "icons/vannes/vannes_equilibrage.svg",
-      "color": "#FF6B6B"
+      "color": "#FF6B6B",
+      "equipment_class": "HydraulicResistanceEquipment",
+      "properties": {
+        "prop1": 100.0,
+        "prop2": 50.0,
+        "prop3": 0.75
+      }
     },
-    "vannes_3V_p": {
-      "display_name": "Vanne 3 voies, progressive",
-      "description": "vanne 3 voies, progressive",
+    "vannes_3V_M_p": {
+      "display_name": "Vanne 3 voies mélangeuse, progressive",
+      "description": "vanne 3 voies mélangeuse, progressive",
       "icon_svg": "icons/vannes/V3V_M.svg",
-      "color": "#FF6B6B"
+      "color": "#FF6B6B",
+      "equipment_class": "HydraulicResistanceEquipment",
+      "properties": {
+        "prop1": 100.0,
+        "prop2": 50.0,
+        "prop3": 0.75
+      }
+    },
+    "vannes_3V_D_p": {
+      "display_name": "Vanne 3 voies diviseuse, progressive",
+      "description": "vanne 3 voies diviseuse, progressive",
+      "icon_svg": "icons/vannes/V3V_D.svg",
+      "color": "#FF6B6B",
+      "equipment_class": "HydraulicResistanceEquipment",
+      "properties": {
+        "prop1": 100.0,
+        "prop2": 50.0,
+        "prop3": 0.75
+      }
     },
     "consommateur_1_1": {
       "display_name": "Consommateur 1.1",
       "description": "Description du consommateur 1.1",
       "icon_svg": "icons/consommateurs/consommateur_1_1.svg",
-      "color": "#FF6B6B"
+      "color": "#FF6B6B",
+      "equipment_class": "HydraulicResistanceEquipment",
+      "properties": {
+        "prop1": 100.0,
+        "prop2": 50.0,
+        "prop3": 0.75
+      }
     },
     "consommateur_1_2": {
       "display_name": "Consommateur 1.2",
       "description": "Description du consommateur 1.2",
       "icon_svg": "icons/consommateurs/consommateur_1_2.svg",
-      "color": "#FF6B6B"
+      "color": "#FF6B6B",
+      "equipment_class": "HydraulicResistanceEquipment",
+      "properties": {
+        "prop1": 100.0,
+        "prop2": 50.0,
+        "prop3": 0.75
+      }
     },
         "consommateur_2_1": {
       "display_name": "Consommateur 2.1",
       "description": "Description du consommateur 2.1",
       "icon_svg": "icons/consommateurs/consommateur_2_1.svg",
-      "color": "#FF6B6B"
+      "color": "#FF6B6B",
+      "equipment_class": "HydraulicResistanceEquipment",
+      "properties": {
+        "prop1": 100.0,
+        "prop2": 50.0,
+        "prop3": 0.75
+      }
     },
     "consommateur_2_2": {
       "display_name": "Consommateur 2.2",
       "description": "Description du consommateur 2.2",
       "icon_svg": "icons/consommateurs/consommateur_2_2.svg",
-      "color": "#FF6B6B"
+      "color": "#FF6B6B",
+      "equipment_class": "HydraulicResistanceEquipment",
+      "properties": {
+        "prop1": 100.0,
+        "prop2": 50.0,
+        "prop3": 0.75
+      }
     },
     "expansion_simple": {
       "display_name": "Dispositif d'expansion",
       "description": "Dispositif d'expansion simple",
       "icon_svg": "icons/expansion/expansion_simple.svg",
-      "color": "#FF6B6B"
+      "color": "#FF6B6B",
+      "equipment_class": "PressureBoundaryConditionEquipment",
+      "properties": {
+        "prop1": 100.0,
+        "prop2": 50.0,
+        "prop3": 0.75
+      } 
     },
     "Fixed_pressure": {
       "display_name": "Pression Fixe",
       "description": "Condition limite de pression fixe",
       "icon_svg": "icons/boundary/fixed_pressure.svg",
-      "color": "#1E90FF"
+      "color": "#1E90FF",
+      "equipment_class": "PressureBoundaryConditionEquipment",
+      "properties": {
+        "prop1": 100.0,
+        "prop2": 50.0,
+        "prop3": 0.75
+      } 
     },
     "Fixed_flowrate": {
       "display_name": "Débit Fixe",
       "description": "Condition limite de débit fixe",
       "icon_svg": "icons/boundary/fixed_flowrate.svg",
-      "color": "#1E90FF"
+      "color": "#1E90FF",
+      "equipment_class": "FlowRateBoundaryConditionEquipment",
+      "properties": {
+        "prop1": 100.0,
+        "prop2": 50.0,
+        "prop3": 0.75
+      }
     },
     "junction_3pipes": {
       "display_name": "Jonction 3 Tuyaux",
       "description": "Jonction pour 3 tuyaux",
       "icon_svg": "icons/connexions/connexion_3pipes.svg",
-      "color": "#1E90FF"
+      "color": "#1E90FF",
+      "equipment_class": "TeeConnectionEquipment",
+      "properties": {
+        "prop1": 100.0,
+        "prop2": 50.0,
+        "prop3": 0.75
+      }
     }
   }
 }
