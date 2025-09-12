@@ -240,7 +240,7 @@ class RightPanel(QWidget):
 
 
         # Ajoute un "stretch" qui pousse le widget vers le haut
-        layout.addStretch()
+        #layout.addStretch()
 
         #un bouton "appliquer"
         button_apply = QPushButton("Appliquer")
@@ -283,6 +283,13 @@ class RightPanel(QWidget):
         property_display_names = {
             'length_m': 'Longueur (m)',
             'diameter_m': 'Diamètre (m)', 
+            'roughness_mm': 'Rugosité (mm)',
+            'flow_rate_1': 'Débit 1 (m³/s)',
+            'flow_rate_2': 'Débit 2 (m³/s)',
+            'flow_rate_3': 'Débit 3 (m³/s)',
+            'pressure_1': 'Pression 1 (Pa)',
+            'pressure_2': 'Pression 2 (Pa)',
+            'pressure_3': 'Pression 3 (Pa)',
             # Ajoutez d'autres mappings selon vos besoins
         }
             
@@ -335,9 +342,20 @@ class RightPanel(QWidget):
 
         self.properties_tree.addTopLevelItem(properties_item)
         properties_item.setExpanded(True)
-        
-        
-        general_item.setExpanded(True)
+
+        results_item = QTreeWidgetItem(["Résultats", ""])
+        results_item.setFont(0, bold_font)  # Colonne 0 en gras
+
+        # Ajouter les résultats ------------------------------------------
+        results = properties_data.get('results', {})
+        for result_name, result_value in results.items():
+            display_name = self.format_property_name(result_name)
+            result_item = QTreeWidgetItem(results_item, [display_name, str(result_value)])
+            # IMPORTANT: Stocker le nom original comme données cachées
+            result_item.setData(0, Qt.UserRole, result_name)  # Nom technique original
+
+        self.properties_tree.addTopLevelItem(results_item)
+        results_item.setExpanded(True)
 
     #si on clique sur le bouton appliquer, mettre à jour les propriétés
     def on_apply_clicked(self):

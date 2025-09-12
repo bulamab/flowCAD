@@ -81,6 +81,11 @@
       "properties": {
         "curve_points": [[20, 10]],
         "elevation": 0.0
+      },
+      "results": {
+        "flow_rate": 0.0,
+        "pressure_in": 0.0,
+        "pressure_out": 0.0
       }
     },
     "vanne_arret": {
@@ -93,7 +98,13 @@
         "prop1": 100.0,
         "prop2": 50.0,
         "prop3": 0.75
+      },
+      "results": {
+        "flow_rate": 0.0,
+        "pressure_in": 0.0,
+        "pressure_out": 0.0
       }
+      
     },
     "vanne_boisseau": {
       "display_name": "Vanne à Boisseau",
@@ -105,6 +116,11 @@
         "prop1": 100.0,
         "prop2": 50.0,
         "prop3": 0.75
+      },
+      "results": {
+        "flow_rate": 0.0,
+        "pressure_in": 0.0,
+        "pressure_out": 0.0
       }
     },
     "vannes_equilibrage": {
@@ -117,6 +133,11 @@
         "prop1": 100.0,
         "prop2": 50.0,
         "prop3": 0.75
+      },
+      "results": {
+        "flow_rate": 0.0,
+        "pressure_in": 0.0,
+        "pressure_out": 0.0
       }
     },
     "vannes_3V_M_p": {
@@ -129,6 +150,13 @@
         "prop1": 100.0,
         "prop2": 50.0,
         "prop3": 0.75
+      },
+      "results": {
+        "flow_rate_1": 0.0,
+        "flow_rate_2": 0.0,
+        "pressure_1": 0.0,
+        "pressure_2": 0.0,
+        "pressure_3": 0.0
       }
     },
     "vannes_3V_D_p": {
@@ -141,6 +169,14 @@
         "prop1": 100.0,
         "prop2": 50.0,
         "prop3": 0.75
+      },
+      "results": {
+        "flow_rate_1": 0.0,
+        "flow_rate_2": 0.0,
+        "flow_rate_3": 0.0,
+        "pressure_1": 0.0,
+        "pressure_2": 0.0,
+        "pressure_3": 0.0
       }
     },
     "consommateur_1_1": {
@@ -153,6 +189,11 @@
         "prop1": 100.0,
         "prop2": 50.0,
         "prop3": 0.75
+      },
+      "results": {
+        "flow_rate": 0.0,
+        "pressure_in": 0.0,
+        "pressure_out": 0.0
       }
     },
     "consommateur_1_2": {
@@ -165,6 +206,11 @@
         "prop1": 100.0,
         "prop2": 50.0,
         "prop3": 0.75
+      },
+      "results": {
+        "flow_rate": 0.0,
+        "pressure_in": 0.0,
+        "pressure_out": 0.0
       }
     },
         "consommateur_2_1": {
@@ -177,6 +223,11 @@
         "prop1": 100.0,
         "prop2": 50.0,
         "prop3": 0.75
+      },
+      "results": {
+        "flow_rate": 0.0,
+        "pressure_in": 0.0,
+        "pressure_out": 0.0
       }
     },
     "consommateur_2_2": {
@@ -189,6 +240,11 @@
         "prop1": 100.0,
         "prop2": 50.0,
         "prop3": 0.75
+      },
+      "results": {
+        "flow_rate": 0.0,
+        "pressure_in": 0.0,
+        "pressure_out": 0.0
       }
     },
     "expansion_simple": {
@@ -201,7 +257,10 @@
         "prop1": 100.0,
         "prop2": 50.0,
         "prop3": 0.75
-      } 
+      },
+      "results": {
+        "pressure_out": 0.0
+      }
     },
     "Fixed_pressure": {
       "display_name": "Pression Fixe",
@@ -213,7 +272,11 @@
         "prop1": 100.0,
         "prop2": 50.0,
         "prop3": 0.75
-      } 
+      },
+      "results": {
+        "flow_rate": 0.0,
+        "pressure_out": 0.0
+      }
     },
     "Fixed_flowrate": {
       "display_name": "Débit Fixe",
@@ -225,6 +288,10 @@
         "prop1": 100.0,
         "prop2": 50.0,
         "prop3": 0.75
+      },
+      "results": {
+        "flow_rate": 0.0,
+        "pressure_out": 0.0
       }
     },
     "junction_3pipes": {
@@ -237,6 +304,14 @@
         "prop1": 100.0,
         "prop2": 50.0,
         "prop3": 0.75
+      },
+      "results": {
+        "flow_rate_1": 0.0,
+        "flow_rate_2": 0.0,
+        "flow_rate_3": 0.0,
+        "pressure_1": 0.0,
+        "pressure_2": 0.0,
+        "pressure_3": 0.0
       }
     }
   }
