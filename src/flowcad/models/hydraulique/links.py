@@ -77,7 +77,7 @@ class Pump(HydraulicLink):
         self.Speed = Speed  # Vitesse de la pompe (facteur multiplicatif)
         if curve_points is None: 
             #courbe par défaut si non fournie
-            self.curve_points = [(40, 10)]
+            self.curve_points = [(40, 20)]
         else:
             self.curve_points = curve_points
         

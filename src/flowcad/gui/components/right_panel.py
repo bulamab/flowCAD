@@ -156,7 +156,7 @@ class SelectiveEditTreeWidget(QTreeWidget):
                     prop_item = top_item.child(j)
                     original_name = prop_item.data(0, Qt.UserRole)  # Nom technique original
                     prop_name = prop_item.text(0)
-                    prop_value = prop_item.text(1)
+                    prop_value = float(prop_item.text(1))  #temporaire, convertir en float... Pas très propre
                     if original_name:
                         properties[original_name] = prop_value
                     else:
@@ -326,6 +326,7 @@ class RightPanel(QWidget):
         QTreeWidgetItem(general_item, ["Description", properties_data.get('description', '')])
         QTreeWidgetItem(general_item, ["Classe", properties_data.get('equipment_class', '')])
         #QTreeWidgetItem(general_item, ["Couleur", properties_data.get('color', '')])
+        general_item.setExpanded(True)
 
         properties_item = QTreeWidgetItem(["Propriétés", ""])
         properties_item.setFont(0, bold_font)  # Colonne 0 en gras

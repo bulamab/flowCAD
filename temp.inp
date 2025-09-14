@@ -2,34 +2,27 @@
 
 [JUNCTIONS]
 ;ID                      Elevation       Demand Pattern                 
- FlowrateBC1_P1_to_Te1_P1     32.80839895   -792.51615707                            ;
- Pipe1_P1_to_Te1_P3       32.80839895               0                            ;
- Pipe1_P2_to_Te2_P1       32.80839895               0                            ;
- Pipe2_P1_to_Te1_P2       32.80839895               0                            ;
- Pipe2_P2_to_Te2_P2       32.80839895               0                            ;
- Te1_Mid                  32.80839895               0                            ;
- Te2_Mid                  32.80839895               0                            ;
+ Pipe1_P2_to_Pipe2_P1               0               0                            ;
+ Pipe2_P2_to_Pump1_P1               0               0                            ;
+ Pump1_P2_to_Pipe3_P1               0               0                            ;
 
 [RESERVOIRS]
 ;ID                                   Head                  Pattern
- Te2_P3_to_PressureBC2_P1    66.252230704                            ;
+ PressureBC1_P1_to_Pipe1_P1    66.252230704                            ;
+ Pipe3_P2_to_PressureBC2_P1    66.252230704                            ;
 
 [TANKS]
 ;ID                              Elevation           Init Level            Min Level            Max Level             Diameter           Min Volume Volume Curve         Overflow            
 
 [PIPES]
 ;ID                   Node1                Node2                              Length             Diameter            Roughness           Minor Loss               Status
- Pipe1                Pipe1_P1_to_Te1_P3   Pipe1_P2_to_Te2_P1       32.80839895     5.905511811     0.656167979               0                 Open   ;
- Pipe2                Pipe2_P1_to_Te1_P2   Pipe2_P2_to_Te2_P2       328.0839895     5.905511811     0.656167979               0                 Open   ;
- Te1_Pipe1            FlowrateBC1_P1_to_Te1_P1 Te1_Mid                0.03280839895     5.905511811 3.280839895e-07               0                 Open   ;
- Te1_Pipe2            Pipe2_P1_to_Te1_P2   Te1_Mid                0.03280839895     5.905511811 3.280839895e-07               0                 Open   ;
- Te1_Pipe3            Pipe1_P1_to_Te1_P3   Te1_Mid                0.03280839895     5.905511811 3.280839895e-07               0                 Open   ;
- Te2_Pipe1            Pipe1_P2_to_Te2_P1   Te2_Mid                0.03280839895     5.905511811 3.280839895e-07               0                 Open   ;
- Te2_Pipe2            Pipe2_P2_to_Te2_P2   Te2_Mid                0.03280839895     5.905511811 3.280839895e-07               0                 Open   ;
- Te2_Pipe3            Te2_P3_to_PressureBC2_P1 Te2_Mid                0.03280839895     5.905511811 3.280839895e-07               0                 Open   ;
+ Pipe1                PressureBC1_P1_to_Pipe1_P1 Pipe1_P2_to_Pipe2_P1      65.6167979     5.905511811    360.89238845               0                 Open   ;
+ Pipe2                Pipe1_P2_to_Pipe2_P1 Pipe2_P2_to_Pump1_P1     3280.839895    0.1968503937    360.89238845               0                 Open   ;
+ Pipe3                Pump1_P2_to_Pipe3_P1 Pipe3_P2_to_PressureBC2_P1      65.6167979     5.905511811    360.89238845               0                 Open   ;
 
 [PUMPS]
 ;ID                   Node1                Node2                Properties          
+ Pump1                Pipe2_P2_to_Pump1_P1 Pump1_P2_to_Pipe3_P1 HEAD     Pump1_curve            ;
 
 [VALVES]
 ;ID                   Node1                Node2                            Diameter Type              Setting           Minor Loss
@@ -48,6 +41,9 @@
 
 [CURVES]
 ;ID         X-Value      Y-Value     
+;PUMP: Pump1_curve
+ Pump1_curve 634012.925660    98.425197   ;
+
 
 [CONTROLS]
 
@@ -109,14 +105,11 @@ TOLERANCE            0.01
 
 [COORDINATES]
 ;Node      X-Coord    Y-Coord   
-FlowrateBC1_P1_to_Te1_P1          0.000000000          0.000000000
-Te2_P3_to_PressureBC2_P1          0.000000000          0.000000000
-Pipe1_P1_to_Te1_P3          0.000000000          0.000000000
-Pipe1_P2_to_Te2_P1          0.000000000          0.000000000
-Pipe2_P1_to_Te1_P2          0.000000000          0.000000000
-Pipe2_P2_to_Te2_P2          0.000000000          0.000000000
-Te1_Mid             0.000000000          0.000000000
-Te2_Mid             0.000000000          0.000000000
+PressureBC1_P1_to_Pipe1_P1          0.000000000          0.000000000
+Pipe3_P2_to_PressureBC2_P1          0.000000000          0.000000000
+Pipe1_P2_to_Pipe2_P1          0.000000000          0.000000000
+Pipe2_P2_to_Pump1_P1          0.000000000          0.000000000
+Pump1_P2_to_Pipe3_P1          0.000000000          0.000000000
 
 [VERTICES]
 ;Link      X-Coord    Y-Coord   

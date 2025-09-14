@@ -1,7 +1,7 @@
 """
 Barre d'outils style ribbon pour FlowCAD
 """
-from PyQt5.QtWidgets import QWidget, QLabel, QHBoxLayout, QVBoxLayout, QFrame, QPushButton,QTabWidget, QToolButton
+from PyQt5.QtWidgets import QWidget, QLabel, QHBoxLayout, QVBoxLayout, QFrame, QPushButton,QTabWidget, QToolButton,QMenu, QAction
 from PyQt5.QtGui import QFont, QIcon, QPixmap, QPainter, QColor, QPen, QBrush
 from PyQt5.QtCore import Qt, pyqtSignal, QSize
 from PyQt5.QtSvg import QSvgRenderer
@@ -15,6 +15,11 @@ class RibbonToolbar(QWidget):
     align_equipment = pyqtSignal(str)  # signal émis pour aligner l'équipement sélectionné
     distribute_equipment = pyqtSignal(str)  # signal émis pour distribuer l'équipement sélectionné
     calculate_network = pyqtSignal()  # signal émis pour lancer le calcul du réseau
+
+    # NOUVEAUX SIGNAUX POUR LE MENU FICHIER
+    save_file = pyqtSignal()  # signal émis pour sauvegarder le fichier
+    open_file = pyqtSignal()  # signal émis pour ouvrir un fichier
+    new_file = pyqtSignal()  # signal émis pour quitter l'application
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -34,6 +39,7 @@ class RibbonToolbar(QWidget):
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(5, 5, 5, 5)
         main_layout.setSpacing(0)
+
 
         # === WIDGET D'ONGLETS ===
         self.tab_widget = QTabWidget()
@@ -65,6 +71,9 @@ class RibbonToolbar(QWidget):
             }
         """)
         
+        # === ONGLET FICHIER (NOUVEAU) ===
+        self.create_file_tab()
+
         # === ONGLET TRANSFORMATION ===
         self.create_transformation_tab()
         
@@ -73,7 +82,7 @@ class RibbonToolbar(QWidget):
         
         # Ajouter le widget d'onglets au layout principal
         main_layout.addWidget(self.tab_widget)
-        
+
         # === ZONE D'INFORMATIONS EN BAS ===
         info_layout = QHBoxLayout()
         info_layout.addStretch()  # Pousse le contenu vers la droite
@@ -84,7 +93,10 @@ class RibbonToolbar(QWidget):
         info_layout.addWidget(info_label)
         
         main_layout.addLayout(info_layout)
-        
+    
+
+
+
     def create_transformation_tab(self):
         """Crée l'onglet Transformation"""
         transformation_widget = QWidget()
@@ -187,6 +199,43 @@ class RibbonToolbar(QWidget):
 
 
         self.tab_widget.addTab(calcul_widget, "Calcul")
+
+
+    def create_file_tab(self):
+        file_widget = QWidget()
+        # Layout horizontal pour les groupes
+        tab_layout = QHBoxLayout(file_widget)
+        tab_layout.setContentsMargins(5, 2, 5, 2)
+        tab_layout.setSpacing(5)
+
+        # === GROUPE FICHIER ===
+        file_group = self.create_tool_group(
+            "Fichier",
+            [
+                {
+                    'text': 'Nouveau',
+                    'icon': 'new_file.svg',
+                    'callback': self.on_new_file_clicked,
+                    'tooltip': "Créer un nouveau fichier"
+                },
+                {
+                    'text': 'Ouvrir',
+                    'icon': 'open_file.svg',
+                    'callback': self.on_open_file_clicked,
+                    'tooltip': "Ouvrir un fichier existant"
+                },
+                {
+                    'text': 'Sauvegarder',
+                    'icon': 'save_file.svg',
+                    'callback': self.on_save_file_clicked,
+                    'tooltip': "Sauvegarder le fichier actuel"
+                }
+            ]
+        )
+        tab_layout.addWidget(file_group)
+
+        self.tab_widget.addTab(file_widget, "Fichier")
+
 
     def create_tool_group(self, title: str, tools: list) -> QFrame:
         """
@@ -296,6 +345,7 @@ class RibbonToolbar(QWidget):
         button.clicked.connect(callback)
         
         return button
+ 
 
     def on_rotate_90_left_clicked(self):
         """Callback du bouton rotation"""
@@ -336,6 +386,21 @@ class RibbonToolbar(QWidget):
         """Callback du bouton distribution horizontale"""
         print("🔄 Bouton distribution horizontale cliqué")
         self.distribute_equipment.emit("h")
+
+    def on_new_file_clicked(self):
+        """Callback du bouton nouveau fichier"""
+        print("📄 Bouton nouveau fichier cliqué")
+        self.new_file.emit()  # Pour l'instant, on émet le signal de sauvegarde
+
+    def on_open_file_clicked(self):
+        """Callback du bouton ouvrir fichier"""
+        print("📂 Bouton ouvrir fichier cliqué")
+        self.open_file.emit()  # Émettre le signal d'ouverture de fichier
+
+    def on_save_file_clicked(self):
+        """Callback du bouton sauvegarder fichier"""
+        print("💾 Bouton sauvegarder fichier cliqué")
+        self.save_file.emit()  # Émettre le signal de sauvegarde
 
     def set_tool_enabled(self, tool_name: str, enabled: bool):
         """Active/désactive un outil (pour plus tard)"""

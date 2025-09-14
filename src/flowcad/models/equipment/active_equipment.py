@@ -29,7 +29,7 @@ class PumpEquipment(BaseEquipment):
         #la courbe de la pompe est une liste de tuples (débit, hauteur)
         if curve_points is None:
             #courbe par défaut si non fournie
-            self.pump_curve = [(40, 10)]
+            self.pump_curve = [(40, 20)]
         else:
             self.pump_curve = curve_points
 

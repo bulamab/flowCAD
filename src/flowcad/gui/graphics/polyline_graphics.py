@@ -67,6 +67,11 @@ class PolylineGraphicsItem(QGraphicsPathItem):
             "diameter_m": "0.2",
             "roughness_mm": "0.1"
         }
+        self.pipe_def["results"] = {
+            "flow_rate": "0.0",
+            "headloss": "0.0",
+            "velocity": "0.0"
+        }
 
     def update_path(self):
         """Met à jour le chemin graphique à partir des points"""

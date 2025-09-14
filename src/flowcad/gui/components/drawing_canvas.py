@@ -766,7 +766,11 @@ class DrawingCanvas(QGraphicsView):
     def get_all_equipment(self) -> Dict[str, EquipmentGraphicsItem]:
         """Récupère tous les équipements"""
         return self.equipment_items.copy()
-    
+
+    def get_all_polylines(self) -> Dict[str, PolylineGraphicsItem]:
+        """Récupère tous les tuyaux"""
+        return self.polylines.copy()
+
     def clear_all_equipment(self):
         """Supprime tous les équipements"""
         for equipment_id in list(self.equipment_items.keys()):

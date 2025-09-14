@@ -7,6 +7,7 @@ Classe de base pour tous les composants hydrauliques FlowCAD
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 
+
 from wntr.sim.results import SimulationResults
 
 

@@ -15,6 +15,8 @@ from .components.drawing_canvas import DrawingCanvas
 from ..config.equipment.equipment_loader import EquipmentLoader
 from .components.mode_panels.connection_panel import ConnectionPanel
 
+from ..controllers.simulation_controller import SimulationController
+
 class WorkModes(Enum):
     EQUIPMENT = "Équipement"
     CONNECTION = "Connexion"
@@ -39,6 +41,15 @@ class FlowCADMainWindow(QMainWindow):
 
         # Connecter votre equipment_loader
         self.drawing_canvas.set_equipment_loader(self.equipment_loader)
+
+        # Panneau équipement à gauche
+        self.Left_panel = LeftPanel(self)
+
+        #panneau des proporiétés à droite
+        self.Right_panel = RightPanel(self)
+
+        # Créer le contrôleur de simulation
+        self.simulation_controller = SimulationController(self)
 
         # Connecter les signaux
         self.drawing_canvas.equipment_dropped.connect(self.on_equipment_dropped)
@@ -66,6 +77,8 @@ class FlowCADMainWindow(QMainWindow):
         self.ribbon_toolbar.mirror_equipment.connect(self.on_mirror_equipment)
         self.ribbon_toolbar.align_equipment.connect(self.on_align_equipment)
         self.ribbon_toolbar.distribute_equipment.connect(self.on_distribute_equipment)
+        # Connecter le bouton calculer
+        self.ribbon_toolbar.calculate_network.connect(self.run_simulation)
         main_layout.addWidget(self.ribbon_toolbar)
         
         # Layout horizontal pour les panneaux du bas
@@ -74,7 +87,7 @@ class FlowCADMainWindow(QMainWindow):
         panels_layout.setSpacing(0)
         
         # Panneau équipement à gauche
-        self.Left_panel = LeftPanel(self)
+        #self.Left_panel = LeftPanel(self)
         panels_layout.addWidget(self.Left_panel)
         self.Left_panel.get_connection_panel().connection_mode_changed.connect(self.on_connection_mode_changed)
         self.Left_panel.get_connection_panel().ports_visibility_changed.connect(self.on_ports_visibility_changed)
@@ -94,7 +107,7 @@ class FlowCADMainWindow(QMainWindow):
         panels_layout.addWidget(self.drawing_canvas)
 
         #panneau des proporiétés à droite
-        self.Right_panel = RightPanel(self)
+        #self.Right_panel = RightPanel(self)
         panels_layout.addWidget(self.Right_panel)
         # Connecter le signal d'équipement sélectionné pour charger les propriétés
         self.drawing_canvas.equipment_properties_requested.connect(self.Right_panel.display_properties)
@@ -211,6 +224,16 @@ class FlowCADMainWindow(QMainWindow):
         connection_panel = self.Left_panel.get_connection_panel()
         properties = connection_panel.get_pipe_properties()
         self.drawing_canvas.cached_pipe_properties = properties'''
+    
+    def run_simulation(self):
+        """Point d'entrée pour la simulation"""
+        print("🚀 Lancement de la simulation...")
+        success = self.simulation_controller.run_complete_simulation()
+        
+        if success:
+            self.statusBar().showMessage("Simulation terminée avec succès", 5000)
+        else:
+            self.statusBar().showMessage("Erreur lors de la simulation", 5000)
 
 def main():
     """Point d'entrée de l'application GUI"""

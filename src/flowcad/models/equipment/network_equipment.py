@@ -13,26 +13,31 @@ from ..hydraulique.components import HydraulicComponent
 class NetworkEquipment():
     def __init__(self, id: str):
         self.id = id
-        self.equipments: List[BaseEquipment] = []
+        #self.equipments: List[BaseEquipment] = []
+        self.equipments: Dict[str, BaseEquipment] = {}
         self.connections: Dict[str, str] = {}
     
     #ajoute un équipement au réseau d'équipement-----------------------------------------------------------------------------
     def add_equipment(self, equipment: BaseEquipment):
 
         #ajoute un équipement au réseau d'équipement
-        if equipment in self.equipments:
+        if equipment in self.equipments.values():
             raise ValueError(f"L'équipement '{equipment.id}' existe déjà dans le réseau.") 
         else:
-            self.equipments.append(equipment)
+            self.equipments[equipment.id] = equipment
+
+    def get_equipment_by_id(self, equipment_id: str) -> Optional[BaseEquipment]:
+        #retourne un équipement du réseau d'équipement via son id
+        return self.equipments.get(equipment_id, None)
 
     #connecte deux équipements via leurs ports respectifs (un des équipment peut être un tuyau)-----------------------------
     def connectEquipments(self, equipment1: BaseEquipment, port_equipment1: Port, equipment2: BaseEquipment, port_equipment2: Port):
         #connecte deux équipements via leurs ports respectifs (un des équipment peut être un tuyau))
 
         #vérifie que les équipements et ports existent
-        if equipment1 not in self.equipments:
+        if equipment1 not in self.equipments.values():
             raise ValueError(f"L'équipement '{equipment1.id}' n'existe pas dans le réseau.")
-        if equipment2 not in self.equipments:
+        if equipment2 not in self.equipments.values():
             raise ValueError(f"L'équipement '{equipment2.id}' n'existe pas dans le réseau.")
         if port_equipment1.id not in equipment1.ports:
             raise ValueError(f"Le port '{port_equipment1.id}' n'existe pas dans l'équipement '{equipment1.id}'.")
@@ -58,7 +63,7 @@ class NetworkEquipment():
     def validate_flowcad(self) -> List[str]:
         errors = []
         #vérifie que tous les ports des équipements sont connectés
-        for equipment in self.equipments:
+        for equipment in self.equipments.values():
             for port in equipment.ports.values():
                 if not port.is_connected:
                     errors.append(f"Le port '{port.id}' de l'équipement '{equipment.id}' n'est pas connecté.")
@@ -68,7 +73,7 @@ class NetworkEquipment():
     def to_hydraulic_network(self) -> HydraulicNetwork:
         hydraulic_network = HydraulicNetwork()
         #ajoute les composants de chaque équipement au réseau hydraulique
-        for equipment in self.equipments:
+        for equipment in self.equipments.values():
             components = equipment.generate_hydraulic_representation(self.connections)
             for component in components:
                 #ajoute le composant au réseau hydraulique
@@ -82,12 +87,12 @@ class NetworkEquipment():
     
     #methode pour obtenirs les résutlats de la simulation depuis le réseau hydraulique
     def get_results_from_hydraulic_network(self, network: HydraulicNetwork):
-        for equipment in self.equipments:
+        for equipment in self.equipments.values():
             equipment.get_simulation_results(network, self.connections)
     
     #Représentation textuelle du réseau d'équipement
     def __str__(self) -> str:
-        equipment_str = "\n".join(str(eq) for eq in self.equipments)
+        equipment_str = "\n".join(str(eq) for eq in self.equipments.values())
         connections_str = "\n".join(f"  Port '{port_id}' connecté via '{conn_name}'" for port_id, conn_name in self.connections.items())
         return (
             f"=========================================================================================\n"
@@ -114,25 +119,30 @@ if __name__ == "__main__":
     
     # Créer des équipements
     #pump_eq = PumpEquipment("Pump1", curve_points=[(50, 15), (100, 10)], elevation=5.0)
-    pressure_High = PressureBoundaryConditionEquipment("PressureBC1", pressure_bar=3.0, elevation=10.0)
+    pressure_High = PressureBoundaryConditionEquipment("PressureBC1", pressure_bar=1.0, elevation=10.0)
     pressure_Low = PressureBoundaryConditionEquipment("PressureBC2", pressure_bar=1.0, elevation=10.0)
     pipe_1 = PipeConnectionEquipment("Pipe1", length=20.0, diameter=0.15, roughness=110)
-    pipe_2 = PipeConnectionEquipment("Pipe2", length=20.0, diameter=0.15, roughness=110)
+    pipe_2 = PipeConnectionEquipment("Pipe2", length=1000.0, diameter=0.005, roughness=110)
+    pipe_3 = PipeConnectionEquipment("Pipe3", length=20.0, diameter=0.15, roughness=110)
+    Pump_eq = PumpEquipment("Pump1", curve_points=[(40, 30)], elevation=10.0)    
 
     # Ajouter les équipements au réseau
     network_eq.add_equipment(pressure_High)
     network_eq.add_equipment(pressure_Low)
     network_eq.add_equipment(pipe_1)
     network_eq.add_equipment(pipe_2)
-
+    network_eq.add_equipment(pipe_3)
+    network_eq.add_equipment(Pump_eq)
 
     # Connecter les équipements via leurs ports
     network_eq.connectEquipments(pressure_High, pressure_High.ports[f"{pressure_High.id}_P1"], pipe_1, pipe_1.ports[f"{pipe_1.id}_P1"])  # Connecter la sortie de la pompe à l'entrée du tuyau
     network_eq.connectEquipments(pipe_1, pipe_1.ports[f"{pipe_1.id}_P2"], pipe_2, pipe_2.ports[f"{pipe_2.id}_P1"])  # Connecter la sortie du tuyau à la condition de bord pression
-    network_eq.connectEquipments(pipe_2, pipe_2.ports[f"{pipe_2.id}_P2"], pressure_Low, pressure_Low.ports[f"{pressure_Low.id}_P1"])  # Connecter la sortie du tuyau à la condition de bord pression
+    network_eq.connectEquipments(pipe_2, pipe_2.ports[f"{pipe_2.id}_P2"], Pump_eq, Pump_eq.ports[f"{Pump_eq.id}_P1"])  # Connecter la sortie du tuyau à la condition de bord pression
+    network_eq.connectEquipments(Pump_eq, Pump_eq.ports[f"{Pump_eq.id}_P2"], pipe_3, pipe_3.ports[f"{pipe_3.id}_P1"])  # Connecter la sortie du tuyau à la condition de bord pression
+    network_eq.connectEquipments(pipe_3, pipe_3.ports[f"{pipe_3.id}_P2"], pressure_Low, pressure_Low.ports[f"{pressure_Low.id}_P1"])  # Connecter la sortie du tuyau à la condition de bord pression
 
     # Afficher les équipements et leurs connexions
-    for eq in network_eq.equipments:
+    for eq in network_eq.equipments.values():
         print(eq)
         for port in eq.ports:
             print(f"  {port}")
@@ -176,12 +186,18 @@ if __name__ == "__main__":
     # Exécuter la simulation
     results = sim.run_sim()
 
+
+    print("results.node['pressure']:", results.node['pressure'])
+    print("results.node['head']:", results.node['head'])
+
+    print("results: results", results.link['flowrate'])
+
             # Afficher les résultats
-    """
-    print("Pressions aux nœuds:")
+    
+    '''print("Pressions aux nœuds:")
     for node_id in ["R1", "J1", "R2"]:
         pressure = results.node['pressure'].loc[0, node_id]
-            print(f"  {node_id}: {pressure:.2f} m")
+        print(f"  {node_id}: {pressure:.2f} m")
         
         print("Charge totale aux nœuds:")
         for node_id in ["R1", "J1", "J2", "R2"]:
@@ -191,5 +207,5 @@ if __name__ == "__main__":
         print("Débits dans les tuyaux/pompes/vannes:")
         print(f"  P1: {results.link['flowrate'].loc[0, 'P1']*1000:.2f} L/s")
         print(f"  P2: {results.link['flowrate'].loc[0, 'P2']*1000:.2f} L/s")
-        print(f"  V1: {results.link['flowrate'].loc[0, 'V1']*1000:.2f} L/s")
-        """
+        print(f"  V1: {results.link['flowrate'].loc[0, 'V1']*1000:.2f} L/s")'''
+        
