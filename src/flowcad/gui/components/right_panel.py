@@ -1,7 +1,7 @@
 """
 Panneau propriétés équipement/connections selon choix
 """
-from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QPushButton, QTreeWidget, QTreeWidgetItem
+from PyQt5.QtWidgets import QWidget, QDialog, QLabel, QVBoxLayout, QPushButton, QTreeWidget, QTreeWidgetItem
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QFont, QBrush, QColor
 
@@ -353,8 +353,11 @@ class RightPanel(QWidget):
                 # Créer le bouton
                 curve_button = QPushButton("Éditer courbe...")
                 curve_button.setToolTip(f"Points de courbe: {prop_value}")  # Info-bulle avec la valeur
-                curve_button.clicked.connect(lambda: self.open_curve_editor(prop_value))
-                
+                #conversion des valeurs
+                list_of_tuples = [tuple(point) for point in prop_value]
+                #print(f"🔄 Conversion des points de courbe pour le bouton: {list_of_tuples}")
+                curve_button.clicked.connect(lambda: self.open_curve_editor(list_of_tuples))
+
                 # Ajouter le bouton à la colonne "Valeur"
                 self.properties_tree.setItemWidget(prop_item, 1, curve_button)
                 
@@ -435,16 +438,25 @@ class RightPanel(QWidget):
                         return child.text(1)
         return None
     
-    def open_curve_editor(self, curve_points):
+    def open_curve_editor(self, points):
         """Ouvre un éditeur de courbe (placeholder pour l'instant)"""
-        print(f"✏️ Ouverture de l'éditeur de courbe avec points: {curve_points}")
+        print(f"✏️ Ouverture de l'éditeur de courbe avec points: {points}")
         # Ici, vous pouvez implémenter une vraie fenêtre d'édition de courbe
         # Pour l'instant, juste un message
         # Par exemple, ouvrir une nouvelle fenêtre modale avec un graphique interactif
+        print("points:", points)
+        dialog = CurveEditorDialog(curve_points=points, parent=self)
 
-        dialog = CurveEditorDialog(curve_points=[(0, 0), (1, 100), (2, 80)], parent=self)
+        results = dialog.exec_()
 
-        dialog.exec_()
+        if results == QDialog.Accepted:
+            new_points = dialog.get_curve_points()
+            print(f"✅ Nouveaux points de courbe obtenus: {new_points}")
+            #temporaire: ajouter juste 1 point, le premier
+            new_points = new_points[:1]
+            self.update_curve_points(new_points)
+        else:
+            print("❌ Édition de la courbe annulée")    
 
 
 

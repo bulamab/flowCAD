@@ -19,7 +19,8 @@ class CurveEditorDialog(QDialog):
     
     def __init__(self, curve_points=None, parent=None):
         super().__init__(parent)
-        self.curve_points = curve_points or [(0, 133), (1, 100), (2, 0)]  # Valeurs par défaut
+        self.curve_points = curve_points or [(0.001, 133), (1, 100), (2, 0)]  # Valeurs par défaut
+        self.nbre_of_points = len(self.curve_points)
         self.coefficients = {'A': 0, 'B': 0, 'C': 2}  # Coefficients de l'équation h = A - Bq^C
         self.setup_ui()
         self.setup_connections()
@@ -43,8 +44,11 @@ class CurveEditorDialog(QDialog):
         points_label = QLabel("Nombre de points:")
         self.points_combo = QComboBox()
         self.points_combo.addItems(["1 point", "3 points"])
-        self.points_combo.setCurrentText("3 points")
-        
+        if self.nbre_of_points == 1:
+            self.points_combo.setCurrentText("1 point")
+        else:
+            self.points_combo.setCurrentText("3 points")
+
         left_layout.addWidget(points_label)
         left_layout.addWidget(self.points_combo)
         
@@ -160,12 +164,12 @@ class CurveEditorDialog(QDialog):
             if self.coefficients['A'] != 0 or self.coefficients['B'] != 0:
                 # Générer une courbe lisse
                 q_min = 0
-                q_max = max(flows) * 1.2 if flows else 2.0
+                q_max = max(flows) * 2.2 if flows else 2.0
                 q_curve = np.linspace(q_min, q_max, 100)
                 
                 try:
                     h_curve = self.pump_equation(q_curve, self.coefficients['A'], 
-                                               self.coefficients['B'], self.coefficients['C'])
+                                            self.coefficients['B'], self.coefficients['C'])
                     
                     # Ne tracer que les valeurs positives de h
                     valid_indices = h_curve >= 0
@@ -174,13 +178,13 @@ class CurveEditorDialog(QDialog):
                     
                     if len(q_valid) > 0:
                         self.ax.plot(q_valid, h_valid, 'b-', linewidth=2, 
-                                   label=f'h = {self.coefficients["A"]:.2f} - {self.coefficients["B"]:.2f}q^{self.coefficients["C"]:.2f}')
+                                label=f'h = {self.coefficients["A"]:.2f} - {self.coefficients["B"]:.2f}q^{self.coefficients["C"]:.2f}')
                 except:
                     pass  # En cas d'erreur dans le calcul, ignorer la courbe théorique
         
         # Configuration du graphique
         self.ax.set_xlabel('Débit (m³/s)')
-        self.ax.set_ylabel('Pression (kPa)')
+        self.ax.set_ylabel('Pression (mCE)')
         self.ax.set_title('Courbe débit/pression')
         self.ax.grid(True, alpha=0.3)
         
@@ -232,6 +236,10 @@ class CurveEditorDialog(QDialog):
                 # Ignorer les valeurs invalides
                 continue
                 
+        #pour le cas ou il y a un seul point, on ajoute des points par defaut
+        if len(points) == 1:
+            points.append((0, points[0][1]*1.33))  # point à débit 0
+            points.append((2*points[0][0], 0))     # point à pression 0
         return points
         
     def set_curve_points(self, points):
@@ -260,7 +268,7 @@ class CurveEditorDialog(QDialog):
             h_data = np.array([point[1] for point in points])
             
             # Éviter les débits nuls pour éviter les problèmes avec les puissances
-            if np.any(q_data <= 0):
+            if np.any(q_data <0):
                 print("⚠️ Les débits doivent être strictement positifs")
                 return
             

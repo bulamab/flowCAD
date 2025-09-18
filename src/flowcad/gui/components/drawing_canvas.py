@@ -1254,6 +1254,28 @@ class DrawingCanvas(QGraphicsView):
             'global_setting': PortGraphicsItem.get_show_connected_ports()
         }
 
+    def cleanup(self):
+        """Nettoie les connexions avant la fermeture"""
+        try:
+            if hasattr(self, 'scene') and self.scene is not None:
+                # Déconnecter le signal de sélection
+                self.scene.selectionChanged.disconnect()
+                
+            # Autres nettoyages si nécessaire
+            if hasattr(self, 'selection_timer') and self.selection_timer is not None:
+                self.selection_timer.stop()
+                
+        except RuntimeError:
+            pass  # Ignorer si les objets sont déjà détruits
+
+    def closeEvent(self, event):
+        """Appelé lors de la fermeture"""
+        self.cleanup()
+        super().closeEvent(event)
+
+
+
+
 # =============================================================================
 # EXEMPLE D'UTILISATION DANS MAIN_WINDOW
 # =============================================================================
