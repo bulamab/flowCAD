@@ -70,7 +70,12 @@ class PolylineGraphicsItem(QGraphicsPathItem):
         self.pipe_def["results"] = {
             "flow_rate": "0.0",
             "headloss": "0.0",
-            "velocity": "0.0"
+            "velocity": "0.0",
+            "pressure_1": "0.0",
+            "head_1": "0.0",
+            "pressure_2": "0.0",
+            "head_2": "0.0",
+            "total_headloss": "0.0"
         }
 
     def update_path(self):

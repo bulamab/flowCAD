@@ -1,3 +1,0 @@
-"""
-Composants GUI de FlowCAD
-"""

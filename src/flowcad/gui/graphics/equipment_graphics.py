@@ -320,10 +320,11 @@ class EquipmentGraphicsItem(QGraphicsItem):
     # L'échelle est définie globalement
     EQUIPEMENT_SCALE = 2
 
-    def __init__(self, equipment_id: str, equipment_def: dict, svg_path: str = None):
+    def __init__(self, equipment_id: str, equipment_def: dict, svg_path: str = None, equipment_type: str = "generic"):
         super().__init__()
         
         self.equipment_id = equipment_id
+        self.equipment_type = equipment_type  # Type d'équipement (ex: pompe, réservoir, etc.)
         self.equipment_def = equipment_def
         self.svg_path = svg_path
         
@@ -853,7 +854,7 @@ class EquipmentGraphicsFactory:
     
     @staticmethod
     def create_equipment_graphics(equipment_id: str, equipment_def: dict,
-                                svg_path: str = None) -> EquipmentGraphicsItem:
+                                svg_path: str = None, equipment_type: str = "generic") -> EquipmentGraphicsItem:
         """Crée un équipement graphique selon sa définition"""
 
-        return EquipmentGraphicsItem(equipment_id, equipment_def, svg_path)
+        return EquipmentGraphicsItem(equipment_id, equipment_def, svg_path, equipment_type)

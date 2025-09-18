@@ -1,4 +1,4 @@
-  Page 1                                    Sun Sep 14 11:21:06 2025
+  Page 1                                    Thu Sep 18 16:43:51 2025
 
   ******************************************************************
   *                           E P A N E T                          *
@@ -9,10 +9,10 @@
   
    
       Input Data File ................... temp.inp
-      Number of Junctions................ 3
-      Number of Reservoirs............... 2
+      Number of Junctions................ 6
+      Number of Reservoirs............... 1
       Number of Tanks ................... 0
-      Number of Pipes ................... 3
+      Number of Pipes ................... 6
       Number of Pumps ................... 1
       Number of Valves .................. 0
       Headloss Formula .................. Darcy-Weisbach
@@ -33,6 +33,6 @@
          No Nodes
          No Links
    
-  Analysis begun Sun Sep 14 11:21:06 2025
+  Analysis begun Thu Sep 18 16:43:51 2025
 
-  Analysis ended Sun Sep 14 11:21:06 2025
+  Analysis ended Thu Sep 18 16:43:51 2025
