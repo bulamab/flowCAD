@@ -1,3 +1,4 @@
+from platform import node
 from typing import List, Dict, Any, Optional
 
 from .base_equipment import BaseEquipment, Port
@@ -39,6 +40,12 @@ class PipeConnectionEquipment(BaseEquipment):
         self.velocity: Optional[float] = None  # la vitesse dans le tuyau en m/s
         self.headloss: Optional[float] = None  # la perte de charge dans le tuyau Pa/m
         self.frictionfactor: Optional[float] = None  # le facteur de friction de Darcy-Weisbach
+        #pressions et charge aux noeuds d'entrée et de sortie
+        self.head_1: Optional[float] = None  # la charge totale du fluide, en kPa
+        self.pressure_1: Optional[float] = None # la pression au noeud en kPa
+        self.head_2: Optional[float] = None  # la charge totale du fluide, en kPa
+        self.pressure_2: Optional[float] = None # la pression au noeud en kPa
+        self.total_headloss: Optional[float] = None #la perte de charge totale en kPa (headloss * longueur)
 
     def generate_hydraulic_representation(self, connections: Dict[str, str]) -> List[HydraulicComponent]:
         
@@ -93,13 +100,21 @@ class PipeConnectionEquipment(BaseEquipment):
             #self.ports[f"{self.id}_P2"].pressure = HydraulicConverter.P_mCE_to_kPa(node2.pressure)
             self.ports[f"{self.id}_P1"].pressure = HydraulicConverter.P_mCE_to_kPa(node1.head-node1.elevation)
             self.ports[f"{self.id}_P2"].pressure = HydraulicConverter.P_mCE_to_kPa(node2.head-node2.elevation)
+            self.head_1 = HydraulicConverter.P_mCE_to_kPa(node1.head) #la pression est convertie avant d'être affichée!
+            self.pressure_1 = HydraulicConverter.P_mCE_to_kPa(node1.head-node1.elevation) #la pression est convertie avant d'être affichée!
+            self.head_2 = HydraulicConverter.P_mCE_to_kPa(node2.head) #la pression est convertie avant d'être affichée!
+            self.pressure_2 = HydraulicConverter.P_mCE_to_kPa(node2.head-node2.elevation) #la pression est convertie avant d'être affichée!
+            self.total_headloss = self.head_1 - self.head_2 #en kPa
         else:  #si le noeud n'est pas trouvé, réinitialiser les résultats
             self.ports[f"{self.id}_P1"].pressure = None
             self.ports[f"{self.id}_P2"].pressure = None
             self.ports[f"{self.id}_P1"].head = None
             self.ports[f"{self.id}_P2"].head = None
-        
-    
+            self.total_headloss = None
+            self.head_1 = None
+            self.pressure_1 = None
+            self.head_2 = None
+            self.pressure_2 = None
     #Représentation textuelle de l'équipement
     def __str__(self) -> str:   
         return (
@@ -144,6 +159,13 @@ class TeeConnectionEquipment(BaseEquipment):
         self.flowrate_Pipe1: Optional[float] = None  # le débit dans le tuyau P1 en m³/s
         self.flowrate_Pipe2: Optional[float] = None  # le débit dans le tuyau P2 en m³/s
         self.flowrate_Pipe3: Optional[float] = None  # le débit dans le tuyau P3 en m³/s
+        #variables pour stocker les résultats de la simulation
+        self.head_1: Optional[float] = None  # la charge totale du fluide, en kPa
+        self.pressure_1: Optional[float] = None # la pression au noeud en kPa
+        self.head_2: Optional[float] = None  # la charge totale du fluide, en kPa
+        self.pressure_2: Optional[float] = None # la pression au noeud
+        self.head_3: Optional[float] = None  # la charge totale du fluide, en kPa
+        self.pressure_3: Optional[float] = None # la pression au noeud en kPa
 
     def generate_hydraulic_representation(self, connections: Dict[str, str]) -> List[HydraulicComponent]:
         
@@ -234,6 +256,12 @@ class TeeConnectionEquipment(BaseEquipment):
             self.ports[f"{self.id}_P1"].pressure = HydraulicConverter.P_mCE_to_kPa(node1.head-node1.elevation)
             self.ports[f"{self.id}_P2"].pressure = HydraulicConverter.P_mCE_to_kPa(node2.head-node2.elevation)
             self.ports[f"{self.id}_P3"].pressure = HydraulicConverter.P_mCE_to_kPa(node3.head-node3.elevation)
+            self.head_1 = HydraulicConverter.P_mCE_to_kPa(node1.head) #la pression est convertie avant d'être affichée!
+            self.pressure_1 = HydraulicConverter.P_mCE_to_kPa(node1.head-node1.elevation) #la pression est convertie avant d'être affichée!
+            self.head_2 = HydraulicConverter.P_mCE_to_kPa(node2.head) #la pression est convertie avant d'être affichée!
+            self.pressure_2 = HydraulicConverter.P_mCE_to_kPa(node2.head-node2.elevation) #la pression est convertie avant d'être affichée!
+            self.head_3 = HydraulicConverter.P_mCE_to_kPa(node3.head) #la pression est convertie avant d'être affichée!
+            self.pressure_3 = HydraulicConverter.P_mCE_to_kPa(node3.head-node3.elevation) #la pression est convertie avant d'être affichée!
         else:  #si le noeud n'est pas trouvé, réinitialiser les résultats
             self.ports[f"{self.id}_P1"].pressure = None
             self.ports[f"{self.id}_P2"].pressure = None
@@ -241,6 +269,12 @@ class TeeConnectionEquipment(BaseEquipment):
             self.ports[f"{self.id}_P1"].head = None
             self.ports[f"{self.id}_P2"].head = None
             self.ports[f"{self.id}_P3"].head = None
+            self.head_1 = None
+            self.pressure_1 = None
+            self.head_2 = None
+            self.pressure_2 = None
+            self.head_3 = None
+            self.pressure_3 = None
 
     #Représentation textuelle de l'équipement
     def __str__(self) -> str:   

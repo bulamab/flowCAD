@@ -46,7 +46,12 @@ class PumpEquipment(BaseEquipment):
 
         #variables pour stocker les résultats de la simulation
         self.flowrate: Optional[float] = None  # le débit fourni par la pompe en m³/s
-        self.headGain: Optional[float] = None  # la hauteur manoméctrique fournie par la pompe en mètres
+        self.head_gain: Optional[float] = None  # la hauteur manoméctrique fournie par la pompe en mètres
+        #pressions et charge aux noeuds d'entrée et de sortie
+        self.head_1: Optional[float] = None  # la charge totale du fluide, en kPa
+        self.pressure_1: Optional[float] = None # la pression au noeud en kPa
+        self.head_2: Optional[float] = None  # la charge totale du fluide, en kPa
+        self.pressure_2: Optional[float] = None # la pression au noeud en kPa
     
     def generate_hydraulic_representation(self, connections: Dict[str, str]) -> List[HydraulicComponent]:
         
@@ -79,10 +84,10 @@ class PumpEquipment(BaseEquipment):
         if self.id in network.links:
             link = network.links[self.id]
             self.flowrate = link.flowrate
-            self.headGain = link.headloss
+            #self.head_gain = link.headloss
         else:  #si le lien n'est pas trouvé, réinitialiser les résultats
             self.flowrate = None    
-            self.headGain = None
+            #self.head_gain = None
         #resultats de pression et hauteur au noeud d'entrée
         IdEquiv_P1 = connections[f"{self.id}_P1"] #va chercher l'id du noeud équivalent dans le réseau hydraulique
         IdEquiv_P2 = connections[f"{self.id}_P2"] #va chercher l'id du noeud équivalent dans le réseau hydraulique
@@ -93,15 +98,22 @@ class PumpEquipment(BaseEquipment):
             self.ports[f"{self.id}_P2"].pressure = HydraulicConverter.P_mCE_to_kPa(node2.pressure)
             self.ports[f"{self.id}_P1"].head = HydraulicConverter.P_mCE_to_kPa(node1.head)
             self.ports[f"{self.id}_P2"].head = HydraulicConverter.P_mCE_to_kPa(node2.head)
+            self.pressure_1 = HydraulicConverter.P_mCE_to_kPa(node1.pressure)
+            self.head_1 = HydraulicConverter.P_mCE_to_kPa(node1.head)
+            self.pressure_2 = HydraulicConverter.P_mCE_to_kPa(node2.pressure)
+            self.head_2 = HydraulicConverter.P_mCE_to_kPa(node2.head)
+            self.head_gain = self.head_2 - self.head_1 #en kPa
         else:
             self.ports[f"{self.id}_P1"].pressure = None
             self.ports[f"{self.id}_P2"].pressure = None
             self.ports[f"{self.id}_P1"].head = None
             self.ports[f"{self.id}_P2"].head = None  
+            self.head_1 = None
+            self.pressure_1 = None
+            self.head_2 = None
+            self.pressure_2 = None
+            self.head_gain
 
-    
-        
-    
     #Représentation textuelle de l'équipement
     def __str__(self) -> str:
 
@@ -115,7 +127,7 @@ class PumpEquipment(BaseEquipment):
             f"-> Port1: {self.ports[f'{self.id}_P1']}, "
             f"Port2: {self.ports[f'{self.id}_P2']})\n"
             f"Résultats de la simulation:\n"
-            f"-> flowrate={self.flowrate} (m3/s), headGain={self.headGain} (m)\n"
+            f"-> flowrate={self.flowrate} (m3/s), headGain={self.head_gain} (m)\n"
             f"-------------------------------------------------------------"
         )
 #===============================================================================================================================================
@@ -135,8 +147,8 @@ class PressureBoundaryConditionEquipment(BaseEquipment):
         self.add_port(Port1)
 
         #variables pour stocker les résultats de la simulation
-        self.head: Optional[float] = None  # la charge totale du fluide, en kPa
-        self.pressure: Optional[float] = None # la pression au noeud en kPa
+        self.head_1: Optional[float] = None  # la charge totale du fluide, en kPa
+        self.pressure_1: Optional[float] = None # la pression au noeud en kPa
 
     
     def generate_hydraulic_representation(self,  connections: Dict[str, str]) -> List[HydraulicComponent]:
@@ -156,11 +168,11 @@ class PressureBoundaryConditionEquipment(BaseEquipment):
         IdEquiv = connections[f"{self.id}_P1"] #va chercher l'id du noeud équivalent dans le réseau hydraulique
         if IdEquiv in network.nodes:
             node = network.nodes[IdEquiv]
-            self.head = HydraulicConverter.P_mCE_to_kPa(node.head) #la pression est convertie avant d'être affichée!
+            self.head_1 = HydraulicConverter.P_mCE_to_kPa(node.head) #la pression est convertie avant d'être affichée!
             #par défaut, basé sur un élément WNTR du type réservoir, qui ne spécifie que la charge totale
             #la pression et l'élévation ne sont pas spécifiées. Il semblerait que WNTR considère la charge comme 100% due à la hauteur
             #dans notre cas, on considère une élévation de base, et donc  on en déduit la pression
-            self.pressure = HydraulicConverter.P_mCE_to_kPa(node.head-self.elevation) #la pression est convertie avant d'être affichée!
+            self.pressure_1 = HydraulicConverter.P_mCE_to_kPa(node.head-self.elevation) #la pression est convertie avant d'être affichée!
 
     #Représentation textuelle de l'équipement
     def __str__(self) -> str:
@@ -176,7 +188,7 @@ class PressureBoundaryConditionEquipment(BaseEquipment):
             f"Ports de {self.id} :\n"
             f"-> Port1: {self.ports[f'{self.id}_P1']}\n "
             f"Résultats de la simulation:\n"
-            f"-> head={self.head} (kPa), pressure={self.pressure} (kPa)\n"
+            f"-> head_1={self.head_1} (kPa), pressure_1={self.pressure_1} (kPa)\n"
             f"-------------------------------------------------------------"
         )
 
@@ -275,6 +287,12 @@ class HydraulicResistanceEquipment(BaseEquipment):
         self.velocity: Optional[float] = None  # la vitesse dans le tuyau en m/s
         self.headloss: Optional[float] = None  # la perte de charge dans le tuyau Pa/m
         self.frictionfactor: Optional[float] = None  # le facteur de friction de Darcy-Weisbach
+        #pressions et charge aux noeuds d'entrée et de sortie
+        self.head_1: Optional[float] = None  # la charge totale du fluide, en kPa
+        self.pressure_1: Optional[float] = None # la pression au noeud en kPa
+        self.head_2: Optional[float] = None  # la charge totale du fluide, en kPa
+        self.pressure_2: Optional[float] = None # la pression au noeud en kPa
+        self.total_headloss: Optional[float] = None #la perte de charge totale en kPa (headloss * longueur)
 
     def generate_hydraulic_representation(self, connections: Dict[str, str]) -> List[HydraulicComponent]:
         """ Du point de vue hydraulique, représenté comme un tuyau, avec juste des pertes singulières"""
@@ -330,11 +348,21 @@ class HydraulicResistanceEquipment(BaseEquipment):
             #self.ports[f"{self.id}_P2"].pressure = HydraulicConverter.P_mCE_to_kPa(node2.pressure)
             self.ports[f"{self.id}_P1"].pressure = HydraulicConverter.P_mCE_to_kPa(node1.head-node1.elevation)
             self.ports[f"{self.id}_P2"].pressure = HydraulicConverter.P_mCE_to_kPa(node2.head-node2.elevation)
+            self.pressure_1 = HydraulicConverter.P_mCE_to_kPa(node1.head-node1.elevation) #la pression est convertie avant d'être affichée!
+            self.head_1 = HydraulicConverter.P_mCE_to_kPa(node1.head) #la pression est convertie avant d'être affichée!
+            self.pressure_2 = HydraulicConverter.P_mCE_to_kPa(node2.head-node2.elevation) #la pression est convertie avant d'être affichée!
+            self.head_2 = HydraulicConverter.P_mCE_to_kPa(node2.head) # la pression est convertie avant d'être affichée!
+            self.total_headloss = self.head_1 - self.head_2 #en kPa
         else:  #si le noeud n'est pas trouvé, réinitialiser les résultats
             self.ports[f"{self.id}_P1"].pressure = None
             self.ports[f"{self.id}_P2"].pressure = None
             self.ports[f"{self.id}_P1"].head = None
             self.ports[f"{self.id}_P2"].head = None
+            self.head_1 = None
+            self.pressure_1 = None
+            self.head_2 = None  
+            self.pressure_2 = None
+            self.total_headloss = None
         
     
     #Représentation textuelle de l'équipement
