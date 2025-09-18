@@ -1,12 +1,13 @@
 """
 Panneau propriétés équipement/connections selon choix
 """
-from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QPushButton, QTreeWidget, QTreeWidgetItem
+from PyQt5.QtWidgets import QWidget, QDialog, QLabel, QVBoxLayout, QPushButton, QTreeWidget, QTreeWidgetItem
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QFont, QBrush, QColor
 
 from .mode_panels.equipment_panel import EquipmentPanel
 from .mode_panels.connection_panel import ConnectionPanel
+from.pump_dialog import CurveEditorDialog
 
 
 class SelectiveEditTreeWidget(QTreeWidget):
@@ -156,7 +157,12 @@ class SelectiveEditTreeWidget(QTreeWidget):
                     prop_item = top_item.child(j)
                     original_name = prop_item.data(0, Qt.UserRole)  # Nom technique original
                     prop_name = prop_item.text(0)
-                    prop_value = float(prop_item.text(1))  #temporaire, convertir en float... Pas très propre
+                    if original_name == "curve_points":
+                        # Récupérer la valeur cachée pour curve_points
+                        prop_value = prop_item.data(1, Qt.UserRole)
+                    else:
+                        # Valeur normale pour les autres propriétés
+                        prop_value = float(prop_item.text(1))  # temporaire, convertir en float
                     if original_name:
                         properties[original_name] = prop_value
                     else:
@@ -287,9 +293,15 @@ class RightPanel(QWidget):
             'flow_rate_1': 'Débit 1 (m³/s)',
             'flow_rate_2': 'Débit 2 (m³/s)',
             'flow_rate_3': 'Débit 3 (m³/s)',
-            'pressure_1': 'Pression 1 (Pa)',
-            'pressure_2': 'Pression 2 (Pa)',
-            'pressure_3': 'Pression 3 (Pa)',
+            'pressure_1': 'Pression 1 (kPa)',
+            'pressure_2': 'Pression 2 (kPa)',
+            'pressure_3': 'Pression 3 (kPa)',
+            'head_1': 'Charge 1 (kPa)',
+            'head_2': 'Charge 2 (kPa)',
+            'head_3': 'Charge 3 (kPa)',
+            'headloss': 'Perte de charge (Pa/m)',
+            'total_headloss': 'Perte de charge totale (kPa)',
+            'curve_points': 'Courbe de pompe (Q,P)',
             # Ajoutez d'autres mappings selon vos besoins
         }
             
@@ -335,11 +347,29 @@ class RightPanel(QWidget):
         properties = properties_data.get('properties', {})
         for prop_name, prop_value in properties.items():
             display_name = self.format_property_name(prop_name)
-            prop_item = QTreeWidgetItem(properties_item, [display_name, str(prop_value)])
-            prop_item.setFlags(prop_item.flags() | Qt.ItemIsEditable)
+            if prop_name == "curve_points":
+                prop_item = QTreeWidgetItem(properties_item, [display_name, ""])  # Valeur vide
+                
+                # Créer le bouton
+                curve_button = QPushButton("Éditer courbe...")
+                curve_button.setToolTip(f"Points de courbe: {prop_value}")  # Info-bulle avec la valeur
+                #conversion des valeurs
+                list_of_tuples = [tuple(point) for point in prop_value]
+                #print(f"🔄 Conversion des points de courbe pour le bouton: {list_of_tuples}")
+                curve_button.clicked.connect(lambda: self.open_curve_editor(list_of_tuples))
 
-            # IMPORTANT: Stocker le nom original comme données cachées
-            prop_item.setData(0, Qt.UserRole, prop_name)  # Nom technique origina
+                # Ajouter le bouton à la colonne "Valeur"
+                self.properties_tree.setItemWidget(prop_item, 1, curve_button)
+                
+                # Stocker quand même la valeur originale pour récupération
+                prop_item.setData(1, Qt.UserRole, prop_value)  # Valeur cachée dans colonne 1
+                prop_item.setData(0, Qt.UserRole, prop_name)   # Nom technique original
+                
+            else:
+                # CAS NORMAL : propriété éditable classique
+                prop_item = QTreeWidgetItem(properties_item, [display_name, str(prop_value)])
+                prop_item.setFlags(prop_item.flags() | Qt.ItemIsEditable)
+                prop_item.setData(0, Qt.UserRole, prop_name)  # Nom technique original
 
         self.properties_tree.addTopLevelItem(properties_item)
         properties_item.setExpanded(True)
@@ -407,3 +437,49 @@ class RightPanel(QWidget):
                     if child.text(0) == "ID":
                         return child.text(1)
         return None
+    
+    def open_curve_editor(self, points):
+        """Ouvre un éditeur de courbe (placeholder pour l'instant)"""
+        print(f"✏️ Ouverture de l'éditeur de courbe avec points: {points}")
+        # Ici, vous pouvez implémenter une vraie fenêtre d'édition de courbe
+        # Pour l'instant, juste un message
+        # Par exemple, ouvrir une nouvelle fenêtre modale avec un graphique interactif
+        print("points:", points)
+        dialog = CurveEditorDialog(curve_points=points, parent=self)
+
+        results = dialog.exec_()
+
+        if results == QDialog.Accepted:
+            new_points = dialog.get_curve_points()
+            print(f"✅ Nouveaux points de courbe obtenus: {new_points}")
+            #temporaire: ajouter juste 1 point, le premier
+            new_points = new_points[:1]
+            self.update_curve_points(new_points)
+        else:
+            print("❌ Édition de la courbe annulée")    
+
+
+
+    def update_curve_points(self, new_curve_points):
+        """Met à jour les points de courbe dans l'arbre"""
+        print(f"🔄 Mise à jour des points de courbe: {new_curve_points}")
+        
+        # Trouver l'item curve_points dans l'arbre et mettre à jour sa valeur cachée
+        root = self.properties_tree.invisibleRootItem()
+        for i in range(root.childCount()):
+            top_item = root.child(i)
+            if top_item.text(0) == "Propriétés":
+                for j in range(top_item.childCount()):
+                    prop_item = top_item.child(j)
+                    original_name = prop_item.data(0, Qt.UserRole)
+                    if original_name == "curve_points":
+                        # Mettre à jour la valeur cachée
+                        prop_item.setData(1, Qt.UserRole, new_curve_points)
+                        
+                        # Mettre à jour l'info-bulle du bouton
+                        button = self.properties_tree.itemWidget(prop_item, 1)
+                        if button:
+                            button.setToolTip(f"Points de courbe: {new_curve_points}")
+                        
+                        print("✅ Points de courbe mis à jour dans l'interface")
+                        return

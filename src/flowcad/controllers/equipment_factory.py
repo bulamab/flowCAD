@@ -40,7 +40,8 @@ class EquipmentFactory:
         
         # Mapping des propriétés selon le type (à adapter selon vos besoins)
         if equipment_class.__name__ == 'PumpEquipment':
-            curve_points = [(properties.get('flow_rate_1', 40), properties.get('pressure_1', 10))]
+            #curve_points = [(properties.get('flow_rate_1', 40), properties.get('pressure_1', 10))]
+            curve_points = properties.get('curve_points', [(40, 10)])
             elevation = properties.get('elevation', 0.0)
             return equipment_class(equipment_id, curve_points, elevation)
             

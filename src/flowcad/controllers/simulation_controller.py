@@ -91,7 +91,31 @@ class SimulationController:
             
         if hasattr(business_eq, 'velocity') and business_eq.velocity is not None:
             results['velocity'] = business_eq.velocity
-        
+
+        if hasattr(business_eq, 'pressure_1') and business_eq.pressure_1 is not None:
+            results['pressure_1'] = business_eq.pressure_1
+
+        if hasattr(business_eq, 'head_1') and business_eq.head_1 is not None:
+            results['head_1'] = business_eq.head_1
+
+        if hasattr(business_eq, 'pressure_2') and business_eq.pressure_2 is not None:
+            results['pressure_2'] = business_eq.pressure_2
+
+        if hasattr(business_eq, 'head_2') and business_eq.head_2 is not None:
+            results['head_2'] = business_eq.head_2
+
+        if hasattr(business_eq, 'pressure_3') and business_eq.pressure_3 is not None:
+            results['pressure_3'] = business_eq.pressure_3
+
+        if hasattr(business_eq, 'head_3') and business_eq.head_3 is not None:
+            results['head_3'] = business_eq.head_3
+
+        if hasattr(business_eq, 'total_headloss') and business_eq.total_headloss is not None:
+            results['total_headloss'] = business_eq.total_headloss
+
+        if hasattr(business_eq, 'head_gain') and business_eq.head_gain is not None:
+            results['head_gain'] = business_eq.head_gain
+
         return results
     
     def _refresh_properties_panel(self):

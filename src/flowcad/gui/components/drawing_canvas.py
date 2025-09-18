@@ -631,9 +631,7 @@ class DrawingCanvas(QGraphicsView):
         self.scene.removeItem(polyline)
         
         # Supprimer de notre liste
-        if polyline in self.polylines:
-            self.polylines.remove(polyline)
-        
+        del self.polylines[polyline.pipe_id]
         print("🗑️ Polyligne supprimée")
 
     def set_direction_lock_threshold(self, threshold: int):
@@ -703,7 +701,7 @@ class DrawingCanvas(QGraphicsView):
         
         # Créer l'élément graphique
         equipment_item = EquipmentGraphicsFactory.create_equipment_graphics(
-            unique_id, equipment_def, svg_path
+            unique_id, equipment_def, svg_path,  equipment_type
         )
         
         # Positionner l'équipement
@@ -755,6 +753,7 @@ class DrawingCanvas(QGraphicsView):
         
         return False
     
+    
     def get_equipment(self, equipment_id: str) -> Optional[EquipmentGraphicsItem]:
         """Récupère un équipement par son ID"""
         return self.equipment_items.get(equipment_id)
@@ -775,6 +774,12 @@ class DrawingCanvas(QGraphicsView):
         """Supprime tous les équipements"""
         for equipment_id in list(self.equipment_items.keys()):
             self.remove_equipment(equipment_id)
+    
+    def clear_all_polylines(self):
+        """Supprime tous les tuyaux"""
+        for pipe_id in list(self.polylines.keys()):
+            pipe_item = self.polylines[pipe_id]
+            self.remove_polyline(pipe_item)
 
     def update_equipment_properties(self, equipment_id: str, new_properties: dict):
         """Met à jour les propriétés d'un équipement"""
@@ -1248,6 +1253,28 @@ class DrawingCanvas(QGraphicsView):
             'visible_connected_ports': visible_connected_ports,
             'global_setting': PortGraphicsItem.get_show_connected_ports()
         }
+
+    def cleanup(self):
+        """Nettoie les connexions avant la fermeture"""
+        try:
+            if hasattr(self, 'scene') and self.scene is not None:
+                # Déconnecter le signal de sélection
+                self.scene.selectionChanged.disconnect()
+                
+            # Autres nettoyages si nécessaire
+            if hasattr(self, 'selection_timer') and self.selection_timer is not None:
+                self.selection_timer.stop()
+                
+        except RuntimeError:
+            pass  # Ignorer si les objets sont déjà détruits
+
+    def closeEvent(self, event):
+        """Appelé lors de la fermeture"""
+        self.cleanup()
+        super().closeEvent(event)
+
+
+
 
 # =============================================================================
 # EXEMPLE D'UTILISATION DANS MAIN_WINDOW
