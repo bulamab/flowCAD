@@ -124,6 +124,8 @@ class FlowCADMainWindow(QMainWindow):
         self.drawing_canvas.equipment_properties_requested.connect(self.Right_panel.display_properties)
         self.Right_panel.equipment_update_requested.connect(self.update_equipment_properties)
         self.Right_panel.pipe_update_requested.connect(self.update_pipe_properties)
+        #Configurer la référence au canvas dans le right_panel
+        self.Right_panel.set_drawing_canvas(self.drawing_canvas)
 
         
 
@@ -260,6 +262,9 @@ class FlowCADMainWindow(QMainWindow):
         """Point d'entrée pour la simulation"""
         print("🚀 Lancement de la simulation...")
         success = self.simulation_controller.run_complete_simulation()
+
+        # Déclencher manuellement le signal de changement de sélection
+        self.drawing_canvas.on_selection_changed()
         
         if success:
             self.statusBar().showMessage("Simulation terminée avec succès", 5000)

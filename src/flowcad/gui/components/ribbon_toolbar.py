@@ -1,12 +1,14 @@
 """
 Barre d'outils style ribbon pour FlowCAD
 """
-from PyQt5.QtWidgets import QWidget, QLabel, QHBoxLayout, QVBoxLayout, QFrame, QPushButton,QTabWidget, QToolButton,QMenu, QAction
+from PyQt5.QtWidgets import QWidget, QLabel, QHBoxLayout, QVBoxLayout, QFrame, QPushButton,QTabWidget, QToolButton,QMenu, QAction, QComboBox, QGridLayout
 from PyQt5.QtGui import QFont, QIcon, QPixmap, QPainter, QColor, QPen, QBrush
 from PyQt5.QtCore import Qt, pyqtSignal, QSize
 from PyQt5.QtSvg import QSvgRenderer
 
 from pathlib import Path
+
+from ...core.unit_manager import UnitManager, FlowUnit, PressureUnit
 
 class RibbonToolbar(QWidget):
 
@@ -25,7 +27,7 @@ class RibbonToolbar(QWidget):
         super().__init__(parent)
         self.setFixedHeight(160)  # Hauteur fixe pour le ribbon
         self.setStyleSheet("background-color: #f0f0f0; border-bottom: 1px solid #ccc;")
-        
+        self.unit_mgr = UnitManager()
         #le chemin vers les icones
         current_dir = Path(__file__).resolve().parent
         self.icon_path = current_dir.parents[1] / "resources" / "icons" / "toolbar"
@@ -79,6 +81,9 @@ class RibbonToolbar(QWidget):
         
         # === ONGLET CALCUL ===
         self.create_calcul_tab()
+
+        # === ONGLET PARAMÈTRES ===
+        self.create_parameter_tab()
         
         # Ajouter le widget d'onglets au layout principal
         main_layout.addWidget(self.tab_widget)
@@ -199,6 +204,102 @@ class RibbonToolbar(QWidget):
 
 
         self.tab_widget.addTab(calcul_widget, "Calcul")
+
+    def create_parameter_tab(self):
+        parameter_widget = QWidget()
+        # Layout horizontal pour les groupes
+        tab_layout = QHBoxLayout(parameter_widget)
+        tab_layout.setContentsMargins(5, 2, 5, 2)
+        tab_layout.setSpacing(5)
+
+        # Conteneur du groupe
+        group_frame = QFrame()
+        group_frame.setFrameStyle(QFrame.Box)
+        group_frame.setLineWidth(1)
+        group_frame.setStyleSheet("""
+            QFrame {
+                border: 1px solid #dee2e6;
+                border-radius: 4px;
+                background-color: #f0f0f0;
+                margin: 2px;
+            }
+        """)
+        
+        # Layout vertical pour le groupe
+        group_layout = QVBoxLayout(group_frame)
+        group_layout.setContentsMargins(4, 2, 4, 2)
+        group_layout.setSpacing(3)
+        
+
+        
+        # Layout horizontal pour les boutons
+        buttons_layout = QHBoxLayout()
+        buttons_layout.setSpacing(5)
+        
+        
+        buttons_layout.addStretch() # Pousse les boutons vers la gauche
+        #group_layout.addLayout(buttons_layout)
+
+        # Layout en grille pour aligner les labels et comboboxes
+        units_layout = QGridLayout()
+        units_layout.setSpacing(10)
+        units_layout.setColumnStretch(2, 1)  # Colonne 2 prend l'espace restant
+
+
+        # Label unité de débit
+        flow_unit_label = QLabel("Unité de débit:")
+        flow_unit_label.setFont(QFont("Arial", 8))
+        flow_unit_label.setStyleSheet("color: #495057; border: none;")
+        units_layout.addWidget(flow_unit_label, 0, 0, Qt.AlignLeft)
+        
+        # Liste déroulante unité de débit
+        self.flow_unit_combo = QComboBox()
+        for unit in FlowUnit:
+            self.flow_unit_combo.addItem(unit.value, unit)
+        self.flow_unit_combo.setStyleSheet("QComboBox { background-color: white; }")
+        self.flow_unit_combo.setCurrentText(self.unit_mgr.get_flow_unit_symbol())  # Valeur par défaut
+        print(f"Unité de débit par défaut: {self.unit_mgr.get_flow_unit_symbol()}")
+        self.flow_unit_combo.setFixedWidth(80)
+        units_layout.addWidget(self.flow_unit_combo, 0, 1, Qt.AlignRight)
+
+         # Connection du signal
+        self.flow_unit_combo.currentIndexChanged.connect(self.on_flow_changed)
+
+        
+        # Label unité de pression
+        pressure_unit_label = QLabel("Unité de pression:")
+        pressure_unit_label.setFont(QFont("Arial", 8))
+        pressure_unit_label.setStyleSheet("color: #495057; border: none;")
+        units_layout.addWidget(pressure_unit_label, 1, 0, Qt.AlignLeft)
+        
+        # Liste déroulante unité de pression
+        self.pressure_unit_combo = QComboBox()
+        for unit in PressureUnit:
+            self.pressure_unit_combo.addItem(unit.value, unit)
+        self.pressure_unit_combo.setStyleSheet("QComboBox { background-color: white; }")
+        self.pressure_unit_combo.setCurrentText(self.unit_mgr.get_pressure_unit_symbol())  # Valeur par défaut
+        self.pressure_unit_combo.setFixedWidth(80)
+        units_layout.addWidget(self.pressure_unit_combo, 1, 1, Qt.AlignRight)
+
+        # Connection du signal - LE PLUS IMPORTANT !
+        self.pressure_unit_combo.currentIndexChanged.connect(self.on_pressure_changed)
+
+        group_layout.addStretch()
+        group_layout.addLayout(units_layout)
+        
+
+        # Titre du groupe
+        title_label = QLabel("Paramètres")
+        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setFont(QFont("Arial", 6, QFont.Bold))
+        title_label.setStyleSheet("color: #495057; border: none;")
+        group_layout.addWidget(title_label)
+
+
+        tab_layout.addWidget(group_frame)
+
+
+        self.tab_widget.addTab(parameter_widget, "Paramètres")
 
 
     def create_file_tab(self):
@@ -414,3 +515,19 @@ class RibbonToolbar(QWidget):
         print("Bouton calculer cliqué")
         self.calculate_network.emit()
         # TODO: Implémenter le calcul
+
+    def on_pressure_changed(self, index):
+        """Callback lorsque l'unité de pression est changée"""
+        selected_unit = self.pressure_unit_combo.itemData(index)
+        flow_unit = self.flow_unit_combo.currentText()
+        print(f"Unité de pression changée: {selected_unit}, unité de débit: {flow_unit}")
+        
+        UnitManager().set_pressure_unit(selected_unit)
+
+    def on_flow_changed(self, index):
+        """Callback lorsque l'unité de débit est changée"""
+        selected_unit = self.flow_unit_combo.itemData(index)
+        pressure_unit = self.pressure_unit_combo.currentText()
+        print(f"Unité de débit changée: {selected_unit}, unité de pression: {pressure_unit}")
+        
+        UnitManager().set_flow_unit(selected_unit)

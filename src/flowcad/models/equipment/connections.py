@@ -49,7 +49,7 @@ class PipeConnectionEquipment(BaseEquipment):
 
     def generate_hydraulic_representation(self, connections: Dict[str, str]) -> List[HydraulicComponent]:
         
-        #créeation des jonctions de la pompe
+        #créeation des jonctions
         J1 = Junction(
             component_id=connections[f"{self.id}_P1"],
             elevation=self.elevation,
@@ -94,17 +94,17 @@ class PipeConnectionEquipment(BaseEquipment):
             node1 = network.nodes[IdEquiv_P1]
             node2 = network.nodes[IdEquiv_P2]
             
-            self.ports[f"{self.id}_P1"].head = HydraulicConverter.P_mCE_to_kPa(node1.head)
-            self.ports[f"{self.id}_P2"].head = HydraulicConverter.P_mCE_to_kPa(node2.head)
-            #self.ports[f"{self.id}_P1"].pressure = HydraulicConverter.P_mCE_to_kPa(node1.pressure)
-            #self.ports[f"{self.id}_P2"].pressure = HydraulicConverter.P_mCE_to_kPa(node2.pressure)
-            self.ports[f"{self.id}_P1"].pressure = HydraulicConverter.P_mCE_to_kPa(node1.head-node1.elevation)
-            self.ports[f"{self.id}_P2"].pressure = HydraulicConverter.P_mCE_to_kPa(node2.head-node2.elevation)
-            self.head_1 = HydraulicConverter.P_mCE_to_kPa(node1.head) #la pression est convertie avant d'être affichée!
-            self.pressure_1 = HydraulicConverter.P_mCE_to_kPa(node1.head-node1.elevation) #la pression est convertie avant d'être affichée!
-            self.head_2 = HydraulicConverter.P_mCE_to_kPa(node2.head) #la pression est convertie avant d'être affichée!
-            self.pressure_2 = HydraulicConverter.P_mCE_to_kPa(node2.head-node2.elevation) #la pression est convertie avant d'être affichée!
-            self.total_headloss = self.head_1 - self.head_2 #en kPa
+            self.ports[f"{self.id}_P1"].head = HydraulicConverter.P_mCE_to_Pa(node1.head)
+            self.ports[f"{self.id}_P2"].head = HydraulicConverter.P_mCE_to_Pa(node2.head)
+            #self.ports[f"{self.id}_P1"].pressure = HydraulicConverter.P_mCE_to_Pa(node1.pressure)
+            #self.ports[f"{self.id}_P2"].pressure = HydraulicConverter.P_mCE_to_Pa(node2.pressure)
+            self.ports[f"{self.id}_P1"].pressure = HydraulicConverter.P_mCE_to_Pa(node1.head-node1.elevation)
+            self.ports[f"{self.id}_P2"].pressure = HydraulicConverter.P_mCE_to_Pa(node2.head-node2.elevation)
+            self.head_1 = HydraulicConverter.P_mCE_to_Pa(node1.head) #la pression est convertie avant d'être affichée!
+            self.pressure_1 = HydraulicConverter.P_mCE_to_Pa(node1.head-node1.elevation) #la pression est convertie avant d'être affichée!
+            self.head_2 = HydraulicConverter.P_mCE_to_Pa(node2.head) #la pression est convertie avant d'être affichée!
+            self.pressure_2 = HydraulicConverter.P_mCE_to_Pa(node2.head-node2.elevation) #la pression est convertie avant d'être affichée!
+            self.total_headloss = self.head_1 - self.head_2 #en Pa
         else:  #si le noeud n'est pas trouvé, réinitialiser les résultats
             self.ports[f"{self.id}_P1"].pressure = None
             self.ports[f"{self.id}_P2"].pressure = None
@@ -248,20 +248,20 @@ class TeeConnectionEquipment(BaseEquipment):
             node2 = network.nodes[IdEquiv_P2]
             node3 = network.nodes[IdEquiv_P3]
             node4 = network.nodes[Id4]
-            self.ports[f"{self.id}_P1"].head = HydraulicConverter.P_mCE_to_kPa(node1.head)
-            self.ports[f"{self.id}_P2"].head = HydraulicConverter.P_mCE_to_kPa(node2.head)
-            self.ports[f"{self.id}_P3"].head = HydraulicConverter.P_mCE_to_kPa(node3.head)
-            #self.ports[f"{self.id}_P1"].pressure = HydraulicConverter.P_mCE_to_kPa(node1.pressure)
-            #self.ports[f"{self.id}_P2"].pressure = HydraulicConverter.P_mCE_to_kPa(node2.pressure)
-            self.ports[f"{self.id}_P1"].pressure = HydraulicConverter.P_mCE_to_kPa(node1.head-node1.elevation)
-            self.ports[f"{self.id}_P2"].pressure = HydraulicConverter.P_mCE_to_kPa(node2.head-node2.elevation)
-            self.ports[f"{self.id}_P3"].pressure = HydraulicConverter.P_mCE_to_kPa(node3.head-node3.elevation)
-            self.head_1 = HydraulicConverter.P_mCE_to_kPa(node1.head) #la pression est convertie avant d'être affichée!
-            self.pressure_1 = HydraulicConverter.P_mCE_to_kPa(node1.head-node1.elevation) #la pression est convertie avant d'être affichée!
-            self.head_2 = HydraulicConverter.P_mCE_to_kPa(node2.head) #la pression est convertie avant d'être affichée!
-            self.pressure_2 = HydraulicConverter.P_mCE_to_kPa(node2.head-node2.elevation) #la pression est convertie avant d'être affichée!
-            self.head_3 = HydraulicConverter.P_mCE_to_kPa(node3.head) #la pression est convertie avant d'être affichée!
-            self.pressure_3 = HydraulicConverter.P_mCE_to_kPa(node3.head-node3.elevation) #la pression est convertie avant d'être affichée!
+            self.ports[f"{self.id}_P1"].head = HydraulicConverter.P_mCE_to_Pa(node1.head)
+            self.ports[f"{self.id}_P2"].head = HydraulicConverter.P_mCE_to_Pa(node2.head)
+            self.ports[f"{self.id}_P3"].head = HydraulicConverter.P_mCE_to_Pa(node3.head)
+            #self.ports[f"{self.id}_P1"].pressure = HydraulicConverter.P_mCE_to_Pa(node1.pressure)
+            #self.ports[f"{self.id}_P2"].pressure = HydraulicConverter.P_mCE_to_Pa(node2.pressure)
+            self.ports[f"{self.id}_P1"].pressure = HydraulicConverter.P_mCE_to_Pa(node1.head-node1.elevation)
+            self.ports[f"{self.id}_P2"].pressure = HydraulicConverter.P_mCE_to_Pa(node2.head-node2.elevation)
+            self.ports[f"{self.id}_P3"].pressure = HydraulicConverter.P_mCE_to_Pa(node3.head-node3.elevation)
+            self.head_1 = HydraulicConverter.P_mCE_to_Pa(node1.head) #la pression est convertie avant d'être affichée!
+            self.pressure_1 = HydraulicConverter.P_mCE_to_Pa(node1.head-node1.elevation) #la pression est convertie avant d'être affichée!
+            self.head_2 = HydraulicConverter.P_mCE_to_Pa(node2.head) #la pression est convertie avant d'être affichée!
+            self.pressure_2 = HydraulicConverter.P_mCE_to_Pa(node2.head-node2.elevation) #la pression est convertie avant d'être affichée!
+            self.head_3 = HydraulicConverter.P_mCE_to_Pa(node3.head) #la pression est convertie avant d'être affichée!
+            self.pressure_3 = HydraulicConverter.P_mCE_to_Pa(node3.head-node3.elevation) #la pression est convertie avant d'être affichée!
         else:  #si le noeud n'est pas trouvé, réinitialiser les résultats
             self.ports[f"{self.id}_P1"].pressure = None
             self.ports[f"{self.id}_P2"].pressure = None

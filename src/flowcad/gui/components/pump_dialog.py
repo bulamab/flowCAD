@@ -10,6 +10,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
 from scipy.optimize import curve_fit
+from ...core.unit_manager import UnitManager, PressureUnit, FlowUnit
 
 
 class CurveEditorDialog(QDialog):
@@ -22,9 +23,11 @@ class CurveEditorDialog(QDialog):
         self.curve_points = curve_points or [(0.001, 133), (1, 100), (2, 0)]  # Valeurs par défaut
         self.nbre_of_points = len(self.curve_points)
         self.coefficients = {'A': 0, 'B': 0, 'C': 2}  # Coefficients de l'équation h = A - Bq^C
+        self.unit_mgr = UnitManager.get_instance()
         self.setup_ui()
         self.setup_connections()
         self.load_initial_data()
+        
         
     def setup_ui(self):
         """Configure l'interface utilisateur"""
@@ -56,7 +59,7 @@ class CurveEditorDialog(QDialog):
         table_label = QLabel("Points de la courbe:")
         self.points_table = QTableWidget()
         self.points_table.setColumnCount(2)
-        self.points_table.setHorizontalHeaderLabels(["Débit (m³/s)", "Pression (kPa)"])
+        self.points_table.setHorizontalHeaderLabels([f"Débit ({self.unit_mgr.get_flow_unit_symbol()})", f"Pression ({self.unit_mgr.get_pressure_unit_symbol()})"])
         
         # Ajuster la largeur des colonnes
         header = self.points_table.horizontalHeader()
@@ -118,12 +121,12 @@ class CurveEditorDialog(QDialog):
         
         for row, (flow, pressure) in enumerate(self.curve_points):
             # Colonne débit
-            flow_item = QTableWidgetItem(str(flow))
+            flow_item = QTableWidgetItem(str(self.unit_mgr.display_flow(flow)))
             flow_item.setFlags(flow_item.flags() | Qt.ItemIsEditable)
             self.points_table.setItem(row, 0, flow_item)
-            
-            # Colonne pression  
-            pressure_item = QTableWidgetItem(str(pressure))
+
+            # Colonne pression
+            pressure_item = QTableWidgetItem(str(self.unit_mgr.display_pressure(pressure)))
             pressure_item.setFlags(pressure_item.flags() | Qt.ItemIsEditable)
             self.points_table.setItem(row, 1, pressure_item)
 
@@ -183,8 +186,8 @@ class CurveEditorDialog(QDialog):
                     pass  # En cas d'erreur dans le calcul, ignorer la courbe théorique
         
         # Configuration du graphique
-        self.ax.set_xlabel('Débit (m³/s)')
-        self.ax.set_ylabel('Pression (mCE)')
+        self.ax.set_xlabel(f'Débit ({self.unit_mgr.get_flow_unit_symbol()})')
+        self.ax.set_ylabel(f'Pression ({self.unit_mgr.get_pressure_unit_symbol()})')
         self.ax.set_title('Courbe débit/pression')
         self.ax.grid(True, alpha=0.3)
         
@@ -229,8 +232,8 @@ class CurveEditorDialog(QDialog):
                 pressure_item = self.points_table.item(row, 1)
                 
                 if flow_item and pressure_item:
-                    flow = float(flow_item.text())
-                    pressure = float(pressure_item.text())
+                    flow = (float(flow_item.text()))
+                    pressure = (float(pressure_item.text()))
                     points.append((flow, pressure))
             except ValueError:
                 # Ignorer les valeurs invalides
@@ -241,6 +244,17 @@ class CurveEditorDialog(QDialog):
             points.append((0, points[0][1]*1.33))  # point à débit 0
             points.append((2*points[0][0], 0))     # point à pression 0
         return points
+    
+    def export_curve_points(self):
+        """Retourne les points de courbe formatés pour l'export"""
+        raw_points = self.get_curve_points()
+        # Convertir les points en unités de base (m3/s, Pa)
+        converted_points = []
+        for flow, pressure in raw_points:
+            flow_base = self.unit_mgr.input_flow_to_m3s(flow)
+            pressure_base = self.unit_mgr.input_pressure_to_pa(pressure)
+            converted_points.append((flow_base, pressure_base))
+        return converted_points
         
     def set_curve_points(self, points):
         """Définit les points de courbe à afficher"""

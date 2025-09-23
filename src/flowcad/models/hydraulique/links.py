@@ -13,16 +13,17 @@ class Pipe(HydraulicLink):
     """
     Classe représentant un tuyau hydraulique.
     """
-    
-    def __init__(self, component_id: str, start_node: str, end_node: str, length: float, diameter: float, roughness: float, minor_loss: float = 0.0, status: str = 'OPEN', check_valve: bool = False):
+
+    def __init__(self, component_id: str, start_node: str, end_node: str, length: float, diameter: float, roughness: float, minor_loss: float = 0.0, initial_status: str = 'OPEN', check_valve: bool = False):
         super().__init__(component_id, start_node, end_node)
         self.length = length  # en mètres
         self.diameter = diameter  # en mètres
         self.roughness = roughness  # en mètres
         self.minor_loss = minor_loss  # coefficient de perte mineure (idem zeta, mais pour donner au final des pertes de charges en mètres)
-        self.status = status  # 'OPEN' ou 'CLOSED'  
+        self.status = initial_status  # 'OPEN' ou 'CLOSED'  
         self.check_valve = check_valve  # True ou False
-
+        #print(f"état du status dans Pipe: {self.status}")
+        
     
     def validate_flowcad(self) -> List[str]:
         errors = super().validate_flowcad()

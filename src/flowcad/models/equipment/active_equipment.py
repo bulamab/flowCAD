@@ -94,15 +94,15 @@ class PumpEquipment(BaseEquipment):
         if IdEquiv_P1 in network.nodes: 
             node1 = network.nodes[IdEquiv_P1]
             node2 = network.nodes[IdEquiv_P2]
-            self.ports[f"{self.id}_P1"].pressure = HydraulicConverter.P_mCE_to_kPa(node1.pressure)
-            self.ports[f"{self.id}_P2"].pressure = HydraulicConverter.P_mCE_to_kPa(node2.pressure)
-            self.ports[f"{self.id}_P1"].head = HydraulicConverter.P_mCE_to_kPa(node1.head)
-            self.ports[f"{self.id}_P2"].head = HydraulicConverter.P_mCE_to_kPa(node2.head)
-            self.pressure_1 = HydraulicConverter.P_mCE_to_kPa(node1.pressure)
-            self.head_1 = HydraulicConverter.P_mCE_to_kPa(node1.head)
-            self.pressure_2 = HydraulicConverter.P_mCE_to_kPa(node2.pressure)
-            self.head_2 = HydraulicConverter.P_mCE_to_kPa(node2.head)
-            self.head_gain = self.head_2 - self.head_1 #en kPa
+            self.ports[f"{self.id}_P1"].pressure = HydraulicConverter.P_mCE_to_Pa(node1.pressure)
+            self.ports[f"{self.id}_P2"].pressure = HydraulicConverter.P_mCE_to_Pa(node2.pressure)
+            self.ports[f"{self.id}_P1"].head = HydraulicConverter.P_mCE_to_Pa(node1.head)
+            self.ports[f"{self.id}_P2"].head = HydraulicConverter.P_mCE_to_Pa(node2.head)
+            self.pressure_1 = HydraulicConverter.P_mCE_to_Pa(node1.pressure)
+            self.head_1 = HydraulicConverter.P_mCE_to_Pa(node1.head)
+            self.pressure_2 = HydraulicConverter.P_mCE_to_Pa(node2.pressure)
+            self.head_2 = HydraulicConverter.P_mCE_to_Pa(node2.head)
+            self.head_gain = self.head_2 - self.head_1 #en Pa
         else:
             self.ports[f"{self.id}_P1"].pressure = None
             self.ports[f"{self.id}_P2"].pressure = None
@@ -168,11 +168,11 @@ class PressureBoundaryConditionEquipment(BaseEquipment):
         IdEquiv = connections[f"{self.id}_P1"] #va chercher l'id du noeud équivalent dans le réseau hydraulique
         if IdEquiv in network.nodes:
             node = network.nodes[IdEquiv]
-            self.head_1 = HydraulicConverter.P_mCE_to_kPa(node.head) #la pression est convertie avant d'être affichée!
+            self.head_1 = HydraulicConverter.P_mCE_to_Pa(node.head) #la pression est convertie avant d'être affichée!
             #par défaut, basé sur un élément WNTR du type réservoir, qui ne spécifie que la charge totale
             #la pression et l'élévation ne sont pas spécifiées. Il semblerait que WNTR considère la charge comme 100% due à la hauteur
             #dans notre cas, on considère une élévation de base, et donc  on en déduit la pression
-            self.pressure_1 = HydraulicConverter.P_mCE_to_kPa(node.head-self.elevation) #la pression est convertie avant d'être affichée!
+            self.pressure_1 = HydraulicConverter.P_mCE_to_Pa(node.head-self.elevation) #la pression est convertie avant d'être affichée!
 
     #Représentation textuelle de l'équipement
     def __str__(self) -> str:
@@ -234,11 +234,11 @@ class FlowRateBoundaryConditionEquipment(BaseEquipment):
         IdEquiv = connections[f"{self.id}_P1"] #va chercher l'id du noeud équivalent dans le réseau hydraulique
         if IdEquiv in network.nodes:
             node = network.nodes[IdEquiv]
-            self.head = HydraulicConverter.P_mCE_to_kPa(node.head) #la pression est convertie avant d'être affichée!
+            self.head = HydraulicConverter.P_mCE_to_Pa(node.head) #la pression est convertie avant d'être affichée!
             #par défaut, basé sur un élément WNTR du type jonction, qui ne spécifie que la charge totale
             #la pression et l'élévation ne sont pas spécifiées. Il semblerait que WNTR considère la charge comme 100% due à la hauteur
             #dans notre cas, on considère une élévation de base, et donc  on en déduit la pression
-            self.pressure = HydraulicConverter.P_mCE_to_kPa(node.head-self.elevation)
+            self.pressure = HydraulicConverter.P_mCE_to_Pa(node.head-self.elevation)
 
     #représentation textuelle
     def __str__(self) -> str:
@@ -267,7 +267,7 @@ class HydraulicResistanceEquipment(BaseEquipment):
     Une résistance hydraulique est représentée comme un tuyau de longeur nulle, avec un coefficient de pertes de charges singulières
     Le coefficient de perte de charge singulière peut être donné de différentes manières via la classe hydraulic_converter"""
 
-    def __init__(self, id: str, diameter: float, zeta: float = 0.0, elevation: float = 0.0):
+    def __init__(self, id: str, diameter: float, zeta: float = 0.0, elevation: float = 0.0, check_valve: bool = False, initial_status: str = 'OPEN'):
         super().__init__(id)
 
         self.length = 0.01  # une petite longueur en mètres
@@ -275,6 +275,8 @@ class HydraulicResistanceEquipment(BaseEquipment):
         self.roughness = 0.000001  # rugosité en mm faibles, là aussi pour éviter l'effet des pertes de charges linéaires
         self.elevation = elevation #l'élévation du tuyau (par défaut, on considère qu'il est horizontal l'élvation est adaptés lors des connections aux équipements)
         self.zeta = zeta #le coefficient zeta, qui permet d'obtenir les pertes de charges en Pa
+        self.check_valve = check_valve #indique si une vanne anti-retour est présente (empêche le retour du fluide)
+        self.initial_status = initial_status #le statut initial de la vanne (OPEN ou CLOSED), par défaut OPEN
 
         #creation de deux ports pour le tuyau de connection à partir de l'id de l'équipement
         Port1 = Port(port_id=f"{id}_P1", parent_equipment_id=id)
@@ -307,7 +309,7 @@ class HydraulicResistanceEquipment(BaseEquipment):
             elevation=self.elevation,
             demand=0.0
         )
-
+        print(f"status dans HydraulicResistanceEquipment: {self.initial_status}")
         pipe = Pipe(
             component_id=self.id,
             start_node=J1.id,
@@ -315,7 +317,9 @@ class HydraulicResistanceEquipment(BaseEquipment):
             length=self.length,
             diameter=self.diameter,
             minor_loss=self.zeta,
-            roughness=self.roughness/1000 #passage de mm en m, pour calculs selon WNTR
+            roughness=self.roughness/1000,  # passage de mm en m, pour calculs selon WNTR
+            check_valve=self.check_valve,    # est-ce-que une vanne anti-retour est présente?
+            initial_status=self.initial_status
         )
         return [J1, J2, pipe]
 
@@ -342,17 +346,17 @@ class HydraulicResistanceEquipment(BaseEquipment):
             node1 = network.nodes[IdEquiv_P1]
             node2 = network.nodes[IdEquiv_P2]
             
-            self.ports[f"{self.id}_P1"].head = HydraulicConverter.P_mCE_to_kPa(node1.head)
-            self.ports[f"{self.id}_P2"].head = HydraulicConverter.P_mCE_to_kPa(node2.head)
-            #self.ports[f"{self.id}_P1"].pressure = HydraulicConverter.P_mCE_to_kPa(node1.pressure)
-            #self.ports[f"{self.id}_P2"].pressure = HydraulicConverter.P_mCE_to_kPa(node2.pressure)
-            self.ports[f"{self.id}_P1"].pressure = HydraulicConverter.P_mCE_to_kPa(node1.head-node1.elevation)
-            self.ports[f"{self.id}_P2"].pressure = HydraulicConverter.P_mCE_to_kPa(node2.head-node2.elevation)
-            self.pressure_1 = HydraulicConverter.P_mCE_to_kPa(node1.head-node1.elevation) #la pression est convertie avant d'être affichée!
-            self.head_1 = HydraulicConverter.P_mCE_to_kPa(node1.head) #la pression est convertie avant d'être affichée!
-            self.pressure_2 = HydraulicConverter.P_mCE_to_kPa(node2.head-node2.elevation) #la pression est convertie avant d'être affichée!
-            self.head_2 = HydraulicConverter.P_mCE_to_kPa(node2.head) # la pression est convertie avant d'être affichée!
-            self.total_headloss = self.head_1 - self.head_2 #en kPa
+            self.ports[f"{self.id}_P1"].head = HydraulicConverter.P_mCE_to_Pa(node1.head)
+            self.ports[f"{self.id}_P2"].head = HydraulicConverter.P_mCE_to_Pa(node2.head)
+            #self.ports[f"{self.id}_P1"].pressure = HydraulicConverter.P_mCE_to_Pa(node1.pressure)
+            #self.ports[f"{self.id}_P2"].pressure = HydraulicConverter.P_mCE_to_Pa(node2.pressure)
+            self.ports[f"{self.id}_P1"].pressure = HydraulicConverter.P_mCE_to_Pa(node1.head-node1.elevation)
+            self.ports[f"{self.id}_P2"].pressure = HydraulicConverter.P_mCE_to_Pa(node2.head-node2.elevation)
+            self.pressure_1 = HydraulicConverter.P_mCE_to_Pa(node1.head-node1.elevation) #la pression est convertie avant d'être affichée!
+            self.head_1 = HydraulicConverter.P_mCE_to_Pa(node1.head) #la pression est convertie avant d'être affichée!
+            self.pressure_2 = HydraulicConverter.P_mCE_to_Pa(node2.head-node2.elevation) #la pression est convertie avant d'être affichée!
+            self.head_2 = HydraulicConverter.P_mCE_to_Pa(node2.head) # la pression est convertie avant d'être affichée!
+            self.total_headloss = self.head_1 - self.head_2 #en Pa
         else:  #si le noeud n'est pas trouvé, réinitialiser les résultats
             self.ports[f"{self.id}_P1"].pressure = None
             self.ports[f"{self.id}_P2"].pressure = None

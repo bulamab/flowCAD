@@ -788,6 +788,7 @@ class DrawingCanvas(QGraphicsView):
         if equipment_item:
             equipment_item.update_properties(new_properties)
             print(f"🔧 Propriétés de {equipment_id} mises à jour: {json.dumps(new_properties, ensure_ascii=False)}")
+            self.clear_all_results() #efface tous les résultats
             return True
         else:
             print(f"⚠️ Équipement {equipment_id} non trouvé pour mise à jour")
@@ -799,10 +800,19 @@ class DrawingCanvas(QGraphicsView):
         if pipe_item:
             pipe_item.update_properties(new_properties)
             print(f"🔧 Propriétés du tuyau {pipe_id} mises à jour: {json.dumps(new_properties, ensure_ascii=False)}")
+            self.clear_all_results() #efface tous les résultats
             return True
         else:
             print(f"⚠️ Tuyau {pipe_id} non trouvé pour mise à jour")
             return False
+
+    def clear_all_results(self):
+        """Supprime tous les résultats affichés sur les équipements et tuyaux"""
+        for equipment in self.equipment_items.values():
+            equipment.clear_results()
+        for pipe in self.polylines.values():
+            pipe.clear_results()
+        print("🧹 Tous les résultats ont été supprimés des équipements et tuyaux")
 
 
     # =============================================================================

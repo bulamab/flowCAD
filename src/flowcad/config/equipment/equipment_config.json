@@ -12,7 +12,7 @@
         "vannes_arret": {
           "display_name": "Vannes d'arrêt",
           "equipment_items": [
-            "vanne_boisseau",
+            "Vb",
             "V1"
           ]
         },
@@ -27,7 +27,7 @@
         "vannes_equilibrage": {
           "display_name": "Vannes d'Équilibrage",
           "equipment_items": [
-            "vannes_equilibrage"
+            "VE"
           ]
         }
       }
@@ -54,7 +54,7 @@
     "Expansion": {
       "display_name": "Expansion",
       "equipment_items": [
-        "expansion_simple"
+        "EXP"
       ]
     },
     "Boundary": {
@@ -69,6 +69,12 @@
       "equipment_items": [
         "T3p"
       ]
+    },
+    "Accessoires": {
+      "display_name": "Accessoires",
+      "equipment_items": [
+        "CAR"
+      ]
     }
   },
 
@@ -80,7 +86,7 @@
       "color": "#FF6B6B",
       "equipment_class": "PumpEquipment",
       "properties": {
-        "curve_points": [[0.04, 20]],
+        "curve_points": [[0.04, 20000]],
         "elevation": 0.0
       },
       "results": {
@@ -101,16 +107,20 @@
       "properties": {
         "diameter_m": 2.0,
         "zeta": 1.0,
-        "elevation": 0
+        "elevation": 0.0,
+        "opening_value": 100,
+        "valve_control_type": "binary"
       },
       "results": {
         "flow_rate": 0.0,
-        "pressure_in": 0.0,
-        "pressure_out": 0.0
+        "pressure_1": 0.0,
+        "pressure_2": 0.0,
+        "head_1": 0.0,
+        "head_2": 0.0
       }
       
     },
-    "vanne_boisseau": {
+    "Vb": {
       "display_name": "Vanne à Boisseau",
       "description": "vanne à boisseau",
       "icon_svg": "icons/vannes/V_boisseau.svg",
@@ -127,7 +137,7 @@
         "pressure_out": 0.0
       }
     },
-    "vannes_equilibrage": {
+    "VE": {
       "display_name": "Vanne d'Équilibrage",
       "description": "vanne d'équilibrage",
       "icon_svg": "icons/vannes/vannes_equilibrage.svg",
@@ -267,19 +277,19 @@
         "pressure_out": 0.0
       }
     },
-    "expansion_simple": {
+    "EXP": {
       "display_name": "Dispositif d'expansion",
       "description": "Dispositif d'expansion simple",
       "icon_svg": "icons/expansion/expansion_simple.svg",
       "color": "#FF6B6B",
       "equipment_class": "PressureBoundaryConditionEquipment",
       "properties": {
-        "prop1": 100.0,
-        "prop2": 50.0,
-        "prop3": 0.75
+        "pressure_bar": 3.0,
+        "elevation": 0.0
       },
       "results": {
-        "pressure_out": 0.0
+        "pressure_1": 0.0,  
+        "head_1": 0.0
       }
     },
     "BC_P": {
@@ -293,7 +303,6 @@
         "elevation": 0.0
       },
       "results": {
-        "flow_rate": 0.0,
         "pressure_1": 0.0,  
         "head_1": 0.0
       }
@@ -309,8 +318,26 @@
         "elevation": 0.0
       },
       "results": {
-        "flow_rate": 0.0,
-        "pressure_out": 0.0
+        "pressure_1": 0.0,
+        "head_1": 0.0
+      }
+    },
+    "CAR": {
+      "display_name": "Clapet anti-retour",
+      "description": "Clapet anti-retour",
+      "icon_svg": "icons/Accessoires/Clapet_anti_retour.svg",
+      "color": "#1E90FF",
+      "equipment_class": "HydraulicResistanceEquipment",
+      "properties": {
+        "diameter_m": 0.1,
+        "elevation": 0.0
+      },
+      "results": {
+        "pressure_1": 0.0,
+        "head_1": 0.0,
+        "pressure_2": 0.0,
+        "head_2": 0.0,
+        "head_loss": 0.0
       }
     },
     "T3p": {

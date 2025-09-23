@@ -500,9 +500,19 @@ class PolylineGraphicsItem(QGraphicsPathItem):
 
     def update_properties(self, new_def: dict):
         """Met à jour les propriétés de l'équipement"""
+        # Effacer les résultats avant de mettre à jour les propriétés
+        self.clear_results()
+        
         #seules les propriétés editables sont mises à jour
         self.pipe_def['properties'].update(new_def)
         print(f"🔧 Propriétés mises à jour pour {self.pipe_id}: {new_def}")
+
+    def clear_results(self):
+        """Efface tous les résultats du tuyau"""
+        if 'results' in self.pipe_def:
+            for key in self.pipe_def['results'].keys():
+                self.pipe_def['results'][key] = 0.0
+            print(f"🧹 Résultats effacés pour le tuyau {self.pipe_id}")
 
 # =============================================================================
 # Fonctions utilitaires pour la gestion des polylignes

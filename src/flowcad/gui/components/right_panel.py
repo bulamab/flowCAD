@@ -1,13 +1,15 @@
 """
 Panneau propriétés équipement/connections selon choix
 """
-from PyQt5.QtWidgets import QWidget, QDialog, QLabel, QVBoxLayout, QPushButton, QTreeWidget, QTreeWidgetItem
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtWidgets import QWidget, QDialog, QLabel, QVBoxLayout, QHBoxLayout, QPushButton, QTreeWidget, QTreeWidgetItem, QSlider
+from PyQt5.QtCore import Qt, pyqtSignal, QTimer
 from PyQt5.QtGui import QFont, QBrush, QColor
 
 from .mode_panels.equipment_panel import EquipmentPanel
 from .mode_panels.connection_panel import ConnectionPanel
 from.pump_dialog import CurveEditorDialog
+
+from ...core.unit_manager import UnitManager, FlowUnit, PressureUnit
 
 
 class SelectiveEditTreeWidget(QTreeWidget):
@@ -160,6 +162,14 @@ class SelectiveEditTreeWidget(QTreeWidget):
                     if original_name == "curve_points":
                         # Récupérer la valeur cachée pour curve_points
                         prop_value = prop_item.data(1, Qt.UserRole)
+                    elif original_name == "opening_value":
+                        # Récupérer la valeur du slider pour opening_value
+                        valve_widget = self.itemWidget(prop_item, 1)
+                        prop_value = valve_widget.get_value() if valve_widget else 0
+                        print(f"Valeur du slider pour 'opening_value': {prop_value}")
+                    elif original_name == "valve_control_type":
+                        # Ne pas inclure cette propriété dans les mises à jour
+                        continue
                     else:
                         # Valeur normale pour les autres propriétés
                         prop_value = float(prop_item.text(1))  # temporaire, convertir en float
@@ -195,16 +205,21 @@ class RightPanel(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setFixedWidth(260)  # Largeur fixe pour le panneau
+        self.setFixedWidth(300)  # Largeur fixe pour le panneau
         self.setStyleSheet(
             "background-color: #e8e8e8; "
             "border: 1px solid #ccc;"
             "border-right: 1px solid #ccc;")
 
+        self.unit_mgr = UnitManager()
+
         # Pour l'instant, juste un label
         self.setup_ui()
 
         self.selected_item_type = None  # "equipment" ou "pipe" ou None
+
+        # Référence au canvas (sera définie par main_window)
+        self._drawing_canvas = None
     
     def setup_ui(self):
         """Configure le panneau équipement (vide pour l'instant)"""
@@ -290,23 +305,55 @@ class RightPanel(QWidget):
             'length_m': 'Longueur (m)',
             'diameter_m': 'Diamètre (m)', 
             'roughness_mm': 'Rugosité (mm)',
-            'flow_rate_1': 'Débit 1 (m³/s)',
-            'flow_rate_2': 'Débit 2 (m³/s)',
-            'flow_rate_3': 'Débit 3 (m³/s)',
-            'pressure_1': 'Pression 1 (kPa)',
-            'pressure_2': 'Pression 2 (kPa)',
-            'pressure_3': 'Pression 3 (kPa)',
-            'head_1': 'Charge 1 (kPa)',
-            'head_2': 'Charge 2 (kPa)',
-            'head_3': 'Charge 3 (kPa)',
-            'headloss': 'Perte de charge (Pa/m)',
-            'total_headloss': 'Perte de charge totale (kPa)',
+            'flow_rate': f"Débit {self.unit_mgr.get_flow_unit_symbol()}",
+            'flow_rate_1': f"Débit 1 {self.unit_mgr.get_flow_unit_symbol()}",
+            'flow_rate_2': f"Débit 2 {self.unit_mgr.get_flow_unit_symbol()}",
+            'flow_rate_3': f"Débit 3 {self.unit_mgr.get_flow_unit_symbol()}",
+            'pressure_1': f"Pression 1 {self.unit_mgr.get_pressure_unit_symbol()}",
+            'pressure_2': f"Pression 2 {self.unit_mgr.get_pressure_unit_symbol()}",
+            'pressure_3': f"Pression 3 {self.unit_mgr.get_pressure_unit_symbol()}",
+            'head_1': f"Charge 1 {self.unit_mgr.get_pressure_unit_symbol()}",
+            'head_2': f"Charge 2 {self.unit_mgr.get_pressure_unit_symbol()}",
+            'head_3': f"Charge 3 {self.unit_mgr.get_pressure_unit_symbol()}",
+            'headloss': f"Perte de charge Pa/m",
+            'head_gain': f"Gain de charge {self.unit_mgr.get_pressure_unit_symbol()}",
+            'total_headloss': f"Perte de charge totale {self.unit_mgr.get_pressure_unit_symbol()}",
             'curve_points': 'Courbe de pompe (Q,P)',
+            'velocity': 'vitesse (m/s)',
+            'opening_value': 'État d\'ouverture',
+            'valve_control_type': 'Type de contrôle de vanne',
             # Ajoutez d'autres mappings selon vos besoins
         }
             
         # Retourner le nom formaté s'il existe, sinon le nom original
         return property_display_names.get(prop_name, prop_name)
+    
+    def is_pressure_property(self, prop_name: str) -> bool:
+        """Détermine si une propriété est une pression"""
+        pressure_keywords = [
+            'pressure',
+            'pressure_1', 'pressure_2', 'pressure_3',
+            'head_1', 'head_2', 'head_3',
+            'total_headloss'
+        ]
+        
+        prop_name_lower = prop_name.lower()
+    
+        # Correspondance exacte OU contient des patterns spécifiques
+        if prop_name_lower in pressure_keywords:
+            return True
+
+        #return any(keyword in prop_name_lower for keyword in pressure_keywords)
+    
+    def is_flow_property(self, prop_name: str) -> bool:
+        """Détermine si une propriété est un débit"""
+        flow_keywords = [
+            'flow', 'flowrate', 'debit', 'débit',
+            'flow_rate', 'flowrate_m3s', 'volume_flow'
+        ]
+
+        prop_name_lower = prop_name.lower()
+        return any(keyword in prop_name_lower for keyword in flow_keywords)
 
     def display_properties(self, properties_data, type="equipment"):
         """Affiche les propriétés d'un équipement ou vide le panneau"""
@@ -364,7 +411,24 @@ class RightPanel(QWidget):
                 # Stocker quand même la valeur originale pour récupération
                 prop_item.setData(1, Qt.UserRole, prop_value)  # Valeur cachée dans colonne 1
                 prop_item.setData(0, Qt.UserRole, prop_name)   # Nom technique original
+            elif prop_name == "opening_value":
+                prop_item = QTreeWidgetItem(properties_item, [display_name, ""])  # Valeur vide
+                # Lire le type depuis les propriétés
+                valve_control_type = properties_data.get('properties', {}).get('valve_control_type', 'proportional')
                 
+                # Fallback si valve_control_type n'existe pas
+                if valve_control_type not in ['binary', 'proportional']:
+                    equipment_class = properties_data.get('equipment_class', '')
+                    valve_control_type = "binary" if equipment_class in ["ball_valve", "gate_valve", "check_valve"] else "proportional"
+                
+                print(f"🎛️ Type de contrôle vanne: {valve_control_type}")
+                
+                # Créer le widget avec le bon type
+                valve_widget = ValveStateWidget(prop_value, valve_type=valve_control_type)
+                
+                self.properties_tree.setItemWidget(prop_item, 1, valve_widget)
+                prop_item.setData(1, Qt.UserRole, prop_value)
+                prop_item.setData(0, Qt.UserRole, prop_name)  
             else:
                 # CAS NORMAL : propriété éditable classique
                 prop_item = QTreeWidgetItem(properties_item, [display_name, str(prop_value)])
@@ -380,6 +444,18 @@ class RightPanel(QWidget):
         # Ajouter les résultats ------------------------------------------
         results = properties_data.get('results', {})
         for result_name, result_value in results.items():
+            if self.is_pressure_property(result_name):
+                result_value =self.unit_mgr.format_pressure(float(result_value))
+            elif self.is_flow_property(result_name):
+                result_value = self.unit_mgr.format_flow(float(result_value))
+            elif result_name in ['headloss']:
+                result_value = f"{float(result_value):.2f} Pa/m"
+            elif result_name in ['velocity']:
+                result_value = f"{float(result_value):.2f} m/s"
+            elif result_name in ['head_gain']:
+                result_value = self.unit_mgr.format_pressure(float(result_value))
+            else:
+                result_value = f"{float(result_value):.2f}"
             display_name = self.format_property_name(result_name)
             result_item = QTreeWidgetItem(results_item, [display_name, str(result_value)])
             # IMPORTANT: Stocker le nom original comme données cachées
@@ -411,6 +487,10 @@ class RightPanel(QWidget):
             # Émettre le signal
             self.equipment_update_requested.emit(equipment_id, properties)
 
+
+            #  Programmer un rafraîchissement après un court délai
+            QTimer.singleShot(100, lambda: self._refresh_current_display("equipment", equipment_id))
+
             # Récupérer les propriétés éditées
             
         elif self.selected_item_type == "pipe":
@@ -425,6 +505,34 @@ class RightPanel(QWidget):
 
             # Émettre le signal
             self.pipe_update_requested.emit(pipe_id, properties)
+
+            #  Programmer un rafraîchissement après un court délai
+            QTimer.singleShot(100, lambda: self._refresh_current_display("pipe", pipe_id))
+
+    def set_drawing_canvas(self, canvas):
+        """Définit la référence au drawing_canvas"""
+        self._drawing_canvas = canvas
+        print("📋 Référence au drawing_canvas configurée dans RightPanel")
+
+    def _refresh_current_display(self, item_type, item_id):
+        """Rafraîchit l'affichage actuel avec les données mises à jour"""
+        print(f"🔄 Rafraîchissement automatique pour {item_type} {item_id}")
+        
+        # Récupérer les données mises à jour depuis main_window
+        if not self._drawing_canvas:
+            print("⚠️ Référence au drawing_canvas manquante")
+            return
+
+        if item_type == "equipment":
+            equipment_item = self._drawing_canvas.get_equipment(item_id)
+            if equipment_item:
+                self.display_properties(equipment_item.equipment_def, "equipment")
+                print("✅ Affichage rafraîchi pour l'équipement")
+        elif item_type == "pipe":
+            pipe_item = self._drawing_canvas.get_pipe(item_id)
+            if pipe_item:
+                self.display_properties(pipe_item.pipe_def, "pipe")
+                print("✅ Affichage rafraîchi pour la connexion (tuyau)")
 
     def get_main_id_from_tree(self):
         """Récupère l'ID principal depuis l'arbre des propriétés"""
@@ -450,7 +558,7 @@ class RightPanel(QWidget):
         results = dialog.exec_()
 
         if results == QDialog.Accepted:
-            new_points = dialog.get_curve_points()
+            new_points = dialog.export_curve_points()
             print(f"✅ Nouveaux points de courbe obtenus: {new_points}")
             #temporaire: ajouter juste 1 point, le premier
             new_points = new_points[:1]
@@ -483,3 +591,137 @@ class RightPanel(QWidget):
                         
                         print("✅ Points de courbe mis à jour dans l'interface")
                         return
+
+#==============================================================================                   
+# Créer une classe pour le widget slider personnalisé
+# Dans right_panel.py - Version modifiée du ValveStateWidget
+
+class ValveStateWidget(QWidget):
+    """Widget personnalisé pour afficher et modifier l'état d'une vanne"""
+    
+    def __init__(self, initial_value, valve_type="proportional", callback=None, parent=None):
+        super().__init__(parent)
+        self.valve_type = valve_type  # "binary" ou "proportional"
+        self.callback = callback
+        self.setup_ui(initial_value)
+    
+    def setup_ui(self, initial_value):
+        """Configure l'interface du widget slider"""
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(5, 2, 5, 2)
+        layout.setSpacing(5)
+        
+        # Slider horizontal
+        self.slider = QSlider(Qt.Horizontal)
+        self.slider.setMinimum(0)
+        self.slider.setMaximum(100)
+        
+        # Définir la valeur initiale
+        initial_val = int(float(initial_value)) if isinstance(initial_value, (str, int, float)) else 50
+        
+        # ⭐ NOUVEAU : Pour les vannes binaires, forcer 0 ou 100
+        if self.valve_type == "binary":
+            initial_val = 100 if initial_val >= 50 else 0
+        
+        self.slider.setValue(initial_val)
+        
+        # Style du slider (identique)
+        self.slider.setStyleSheet("""
+            QSlider::groove:horizontal {
+                border: 1px solid #999999;
+                height: 8px;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #ff4444, stop:1 #44ff44);
+                margin: 2px 0;
+                border-radius: 4px;
+            }
+            QSlider::handle:horizontal {
+                background: #ffffff;
+                border: 2px solid #999999;
+                width: 18px;
+                margin: -4px 0;
+                border-radius: 9px;
+            }
+            QSlider::handle:horizontal:hover {
+                border: 2px solid #555555;
+            }
+        """)
+        
+        # Label pour afficher la valeur
+        self.value_label = QLabel()
+        self.value_label.setMinimumWidth(60)
+        self.value_label.setAlignment(Qt.AlignCenter)
+        
+        # ⭐ NOUVEAU : Connecter différents signaux selon le type de vanne
+        if self.valve_type == "binary":
+            # Pour les vannes binaires : snap à 0 ou 100 dès qu'on bouge
+            self.slider.sliderMoved.connect(self.snap_to_binary)
+            self.slider.valueChanged.connect(self.update_label)
+        else:
+            # Pour les vannes proportionnelles : comportement normal
+            self.slider.valueChanged.connect(self.update_label)
+        
+        # Mise à jour initiale du label
+        self.update_label(self.slider.value())
+        
+        # Ajouter les widgets au layout
+        layout.addWidget(self.slider, 1)
+        layout.addWidget(self.value_label, 0)
+    
+    def snap_to_binary(self, value):
+        """Force le slider à se positionner sur 0 ou 100 uniquement"""
+        if value < 50:
+            snap_value = 0
+        else:
+            snap_value = 100
+        
+        # Mise à jour sans déclencher le signal sliderMoved
+        self.slider.blockSignals(True)
+        self.slider.setValue(snap_value)
+        self.slider.blockSignals(False)
+        
+        # Déclencher manuellement la mise à jour du label
+        self.update_label(snap_value)
+        
+        # Appeler le callback si défini
+        if self.callback:
+            self.callback(snap_value)
+    
+    def update_label(self, value):
+        """Met à jour le texte du label selon la valeur du slider"""
+        if self.valve_type == "binary":
+            # Pour les vannes binaires : seulement "Fermé" ou "Ouvert"
+            if value <= 50:
+                text = "Fermé"
+                color = "#ff4444"
+            else:
+                text = "Ouvert"
+                color = "#44ff44"
+        else:
+            # Pour les vannes proportionnelles : comportement original
+            if value <= 5:
+                text = "Fermé"
+                color = "#ff4444"
+            elif value >= 95:
+                text = "Ouvert" 
+                color = "#44ff44"
+            else:
+                text = f"{value}%"
+                color = "#ffaa00"
+        
+        self.value_label.setText(text)
+        #self.value_label.setStyleSheet(f"color: {color}; font-weight: bold;")
+    
+    def get_value(self):
+        """Retourne la valeur actuelle du slider"""
+        return self.slider.value()
+    
+    def set_value(self, value):
+        """Définit la valeur du slider"""
+        val = int(float(value)) if isinstance(value, (str, int, float)) else 50
+        
+        # Pour les vannes binaires, forcer 0 ou 100
+        if self.valve_type == "binary":
+            val = 100 if val >= 50 else 0
+            
+        self.slider.setValue(val)

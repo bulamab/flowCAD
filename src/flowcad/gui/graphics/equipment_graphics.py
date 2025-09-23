@@ -839,9 +839,22 @@ class EquipmentGraphicsItem(QGraphicsItem):
 
     def update_properties(self, new_def: dict):
         """Met à jour les propriétés de l'équipement"""
+        # Effacer les résultats avant de mettre à jour les propriétés
+        self.clear_results()
+
         #seules les propriétés editables sont mises à jour
         self.equipment_def['properties'].update(new_def)
         print(f"🔧 Propriétés mises à jour pour {self.equipment_id}: {new_def}")
+
+    # Dans src/flowcad/gui/graphics/equipment_graphics.py
+    def clear_results(self):
+        """Efface tous les résultats de l'équipement"""
+        if 'results' in self.equipment_def:
+            # Réinitialiser tous les résultats à 0.0
+            for key in self.equipment_def['results'].keys():
+                self.equipment_def['results'][key] = 0.0
+            print(f"🧹 Résultats effacés pour {self.equipment_id}")
+
 
 
 
