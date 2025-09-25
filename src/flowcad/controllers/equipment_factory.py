@@ -2,6 +2,7 @@ from typing import Dict, Any
 from ..models.equipment import equipment_classes
 from ..models.equipment.base_equipment import BaseEquipment
 from ..core.unit_manager import UnitManager, PressureUnit, FlowUnit
+from ..models import hydraulic_converter as hc
 
 
 class EquipmentFactory:
@@ -57,7 +58,7 @@ class EquipmentFactory:
                 initial_status = 'OPEN'  #par défaut, le clapet est ouvert
             elif equipment_type == "V1":  #il s'agit d'une vanne
                 check_valve = False
-                opening_status = properties.get('opening_status', 100)
+                opening_status = properties.get('opening_value', 100)
                 print(f"opening_status dans EquipmentFactory: {opening_status}")
                 if float(opening_status) >= 50:
                     initial_status = 'OPEN'
@@ -86,6 +87,27 @@ class EquipmentFactory:
                 equipment_id,
                 properties.get('diameter_m', 1.0),
                 properties.get('elevation', 0.0)
+            )
+        elif equipment_class.__name__ == 'ValveEquipment':
+            opening_value = properties.get('opening_value', 100)
+            print(f"opening_value dans EquipmentFactory: {opening_value}")
+            valve_control_type = properties.get('valve_control_type', 'linear')
+            zeta = hc.HydraulicConverter.zeta_from_kv(
+                kv=properties.get('kv_s', 1.0),
+                diameter=properties.get('diameter_m', 0.1)
+            )
+            print(f"opening_value dans EquipmentFactory: {opening_value}, zeta calculé: {zeta}", "kv=", properties.get('kv_s', 1.0))
+            zeta_active = zeta * (100 - opening_value / 100)
+            print(f"zeta_active calculé dans EquipmentFactory: {zeta_active}")
+
+            return equipment_class(
+                id=equipment_id,
+                diameter=properties.get('diameter_m', 0.1),
+                zeta=zeta,
+                elevation=properties.get('elevation', 0.0),
+                valve_type='TCV',
+                initial_status='ACTIVE',
+                setting=zeta_active
             )
 
         # Ajouter d'autres types au fur et à mesure...

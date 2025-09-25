@@ -19,9 +19,9 @@
         "vannes_reglage": {
           "display_name": "Vannes de Régulation",
           "equipment_items": [
-            "vannes_3V_M_p",
-            "vannes_3V_D_p",
-            "vannes_2V_p"
+            "V3V_M_p",
+            "V3V_D_p",
+            "V2V_p"
           ]
         },
         "vannes_equilibrage": {
@@ -153,24 +153,28 @@
         "pressure_in": 0.0,
         "pressure_out": 0.0
       }
-    },"vannes_2V_p": {
+    },"V2V_p": {
       "display_name": "Vanne 2 voies, progressive",
       "description": "vanne 2 voies, progressive",
       "icon_svg": "icons/vannes/V2V.svg",
       "color": "#FF6B6B",
-      "equipment_class": "HydraulicResistanceEquipment",
+      "equipment_class": "ValveEquipment",
       "properties": {
-        "prop1": 100.0,
-        "prop2": 50.0,
-        "prop3": 0.75
+        "diameter_m": 0.1,
+        "kv_s": 1.0,
+        "elevation": 0.0,
+        "opening_value": 100,
+        "valve_control_type": "linear"
       },
       "results": {
         "flow_rate": 0.0,
         "pressure_1": 0.0,
-        "pressure_2": 0.0
+        "pressure_2": 0.0,
+        "head_1": 0.0,
+        "head_2": 0.0
       }
     },
-    "vannes_3V_M_p": {
+    "V3V_M_p": {
       "display_name": "Vanne 3 voies mélangeuse, progressive",
       "description": "vanne 3 voies mélangeuse, progressive",
       "icon_svg": "icons/vannes/V3V_M.svg",
@@ -189,7 +193,7 @@
         "pressure_3": 0.0
       }
     },
-    "vannes_3V_D_p": {
+    "V3V_D_p": {
       "display_name": "Vanne 3 voies diviseuse, progressive",
       "description": "vanne 3 voies diviseuse, progressive",
       "icon_svg": "icons/vannes/V3V_D.svg",
