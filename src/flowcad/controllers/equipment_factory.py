@@ -1,4 +1,5 @@
 from typing import Dict, Any
+import math
 from ..models.equipment import equipment_classes
 from ..models.equipment.base_equipment import BaseEquipment
 from ..core.unit_manager import UnitManager, PressureUnit, FlowUnit
@@ -88,16 +89,66 @@ class EquipmentFactory:
                 properties.get('diameter_m', 1.0),
                 properties.get('elevation', 0.0)
             )
+        #---------------------------------------------------------------------------------------
+        #si l'équipement est une vanne 2V-------------------------------------------------------
         elif equipment_class.__name__ == 'ValveEquipment':
+
+            #Vanne de type vanne 2 voies, progressive (TCV) if equipment_type == "V2V_p"
+            print(f"type d'équipement: {equipment_type}")
             opening_value = properties.get('opening_value', 100)
-            print(f"opening_value dans EquipmentFactory: {opening_value}")
+            
             valve_control_type = properties.get('valve_control_type', 'linear')
+            #Le zeta de la vanne 100% ouverte, à partir du kv_s
             zeta = hc.HydraulicConverter.zeta_from_kv(
                 kv=properties.get('kv_s', 1.0),
                 diameter=properties.get('diameter_m', 0.1)
             )
-            print(f"opening_value dans EquipmentFactory: {opening_value}, zeta calculé: {zeta}", "kv=", properties.get('kv_s', 1.0))
-            zeta_active = zeta * (100 - opening_value / 100)
+            #print(f"opening_value dans EquipmentFactory: {opening_value}, zeta calculé: {zeta}", "kv=", properties.get('kv_s', 1.0))
+            #le kv effectif en fonction de l'ouverture et du type de contrôle
+            if valve_control_type == 'linear':
+                opening_value = float(opening_value)
+                if opening_value < 0 or opening_value > 100:
+                    raise ValueError("La valeur d'ouverture doit être entre 0 et 100")
+                opening_value = max(0.0, min(100.0, opening_value))  # Clamp entre 0 et 100
+                if opening_value == 0:
+                    status = 'CLOSED'
+                elif opening_value == 100:
+                    status = 'OPEN'
+                else:
+                    status = 'ACTIVE'
+                #relation linéaire entre l'ouverture et le kv effectif
+                kv_eff = properties.get('kv_s', 1.0) * (opening_value) / 100
+            elif valve_control_type == 'equal_percentage':
+                opening_value = float(opening_value)
+                if opening_value < 0 or opening_value > 100:
+                    raise ValueError("La valeur d'ouverture doit être entre 0 et 100")
+                opening_value = max(0.0, min(100.0, opening_value))  # Clamp entre 0 et 100
+                if opening_value == 0:
+                    status = 'CLOSED'
+                elif opening_value == 100:
+                    status = 'OPEN'
+                else:
+                    status = 'ACTIVE'
+                #relation exponentielle entre l'ouverture et le kv effectif
+                n=3 #exposant
+                relative_opening = opening_value / 100
+                kv_s = properties.get('kv_s', 1.0)
+                relative_opening_switch = 0.4
+                e = math.e
+                relative_kv_switch = e**(n * (relative_opening_switch - 1))
+                print(f"relative_kv_switch dans EquipmentFactory: {relative_kv_switch}, relative_opening switch: {relative_opening_switch} relative_opening: {relative_opening}")
+                if relative_opening < relative_opening_switch:
+                    kv_eff = kv_s * (relative_opening / relative_opening_switch) * relative_kv_switch
+                else:
+                    kv_eff = e**(n * (relative_opening - 1)) * kv_s
+
+            else:
+                raise ValueError(f"Type de contrôle de vanne inconnu: {valve_control_type}")
+            
+            zeta_active = hc.HydraulicConverter.zeta_from_kv(
+                kv=kv_eff,
+                diameter=properties.get('diameter_m', 0.1)
+            )
             print(f"zeta_active calculé dans EquipmentFactory: {zeta_active}")
 
             return equipment_class(
@@ -106,10 +157,80 @@ class EquipmentFactory:
                 zeta=zeta,
                 elevation=properties.get('elevation', 0.0),
                 valve_type='TCV',
-                initial_status='ACTIVE',
+                initial_status=status,
                 setting=zeta_active
             )
+        #---------------------------------------------------------------------------------------
+        #si l'équipement est une vanne 3V-------------------------------------------------------
+        elif equipment_class.__name__ == 'ThreeWayValveEquipment':
 
+            #Vanne de type vanne 3 voies, progressive (TCV) if equipment_type == "V3V_p"
+            print(f"type d'équipement: {equipment_type}")
+            opening_value = properties.get('opening_value', 100)
+            
+            valve_control_type = properties.get('valve_control_type', 'linear')
+            #Le zeta de la vanne 100% ouverte, à partir du kv_s
+            zeta = hc.HydraulicConverter.zeta_from_kv(
+                kv=properties.get('kv_s', 1.0),
+                diameter=properties.get('diameter_m', 0.1)
+            )
+            #print(f"opening_value dans EquipmentFactory: {opening_value}, zeta calculé: {zeta}", "kv=", properties.get('kv_s', 1.0))
+            #le kv effectif en fonction de l'ouverture et du type de contrôle
+            if valve_control_type == 'linear':
+                opening_value = float(opening_value)
+                if opening_value < 0 or opening_value > 100:
+                    raise ValueError("La valeur d'ouverture doit être entre 0 et 100")
+                opening_value = max(0.0, min(100.0, opening_value))  # Clamp entre 0 et 100
+                if opening_value == 0:
+                    status = 'CLOSED'
+                elif opening_value == 100:
+                    status = 'OPEN'
+                else:
+                    status = 'ACTIVE'
+                #relation linéaire entre l'ouverture et le kv effectif
+                kv_eff = properties.get('kv_s', 1.0) * (opening_value) / 100
+            elif valve_control_type == 'equal_percentage':
+                opening_value = float(opening_value)
+                if opening_value < 0 or opening_value > 100:
+                    raise ValueError("La valeur d'ouverture doit être entre 0 et 100")
+                opening_value = max(0.0, min(100.0, opening_value))  # Clamp entre 0 et 100
+                if opening_value == 0:
+                    status = 'CLOSED'
+                elif opening_value == 100:
+                    status = 'OPEN'
+                else:
+                    status = 'ACTIVE'
+                #relation exponentielle entre l'ouverture et le kv effectif
+                n=3 #exposant
+                relative_opening = opening_value / 100
+                kv_s = properties.get('kv_s', 1.0)
+                relative_opening_switch = 0.4
+                e = math.e
+                relative_kv_switch = e**(n * (relative_opening_switch - 1))
+                print(f"relative_kv_switch dans EquipmentFactory: {relative_kv_switch}, relative_opening switch: {relative_opening_switch} relative_opening: {relative_opening}")
+                if relative_opening < relative_opening_switch:
+                    kv_eff = kv_s * (relative_opening / relative_opening_switch) * relative_kv_switch
+                else:
+                    kv_eff = e**(n * (relative_opening - 1)) * kv_s
+
+            else:
+                raise ValueError(f"Type de contrôle de vanne inconnu: {valve_control_type}")
+            
+            zeta_active = hc.HydraulicConverter.zeta_from_kv(
+                kv=kv_eff,
+                diameter=properties.get('diameter_m', 0.1)
+            )
+            print(f"zeta_active calculé dans EquipmentFactory: {zeta_active}")
+
+            return equipment_class(
+                id=equipment_id,
+                diameter=properties.get('diameter_m', 0.1),
+                zeta=zeta,
+                elevation=properties.get('elevation', 0.0),
+                valve_type='TCV',
+                initial_status=status,
+                setting=zeta_active
+            )
         # Ajouter d'autres types au fur et à mesure...
         else:
             raise NotImplementedError(f"Création non implémentée pour {equipment_class.__name__}")

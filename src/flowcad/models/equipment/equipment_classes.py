@@ -8,7 +8,8 @@ from .active_equipment import (
     PressureBoundaryConditionEquipment,
     FlowRateBoundaryConditionEquipment,
     HydraulicResistanceEquipment,
-    ValveEquipment
+    ValveEquipment,
+    ThreeWayValveEquipment
 )
 
 from .connections import (
@@ -27,5 +28,6 @@ __all__ = [
     'HydraulicResistanceEquipment',
     'PipeConnectionEquipment',
     'TeeConnectionEquipment',
-    'ValveEquipment'
+    'ValveEquipment',
+    'ThreeWayValveEquipment'
 ]

@@ -164,7 +164,7 @@
         "kv_s": 1.0,
         "elevation": 0.0,
         "opening_value": 100,
-        "valve_control_type": "linear"
+        "valve_control_type": "equal_percentage"
       },
       "results": {
         "flow_rate": 0.0,
@@ -179,15 +179,18 @@
       "description": "vanne 3 voies mélangeuse, progressive",
       "icon_svg": "icons/vannes/V3V_M.svg",
       "color": "#FF6B6B",
-      "equipment_class": "HydraulicResistanceEquipment",
+      "equipment_class": "ThreeWayValveEquipment",
       "properties": {
-        "prop1": 100.0,
-        "prop2": 50.0,
-        "prop3": 0.75
+        "diameter_m": 0.1,
+        "kv_s": 1.0,
+        "elevation": 0.0,
+        "opening_value": 100,
+        "valve_control_type": "linear"
       },
       "results": {
         "flow_rate_1": 0.0,
         "flow_rate_2": 0.0,
+        "flow_rate_3": 0.0,
         "pressure_1": 0.0,
         "pressure_2": 0.0,
         "pressure_3": 0.0
@@ -198,11 +201,13 @@
       "description": "vanne 3 voies diviseuse, progressive",
       "icon_svg": "icons/vannes/V3V_D.svg",
       "color": "#FF6B6B",
-      "equipment_class": "HydraulicResistanceEquipment",
+      "equipment_class": "ThreeWayValveEquipment",
       "properties": {
-        "prop1": 100.0,
-        "prop2": 50.0,
-        "prop3": 0.75
+        "diameter_m": 0.1,
+        "kv_s": 1.0,
+        "elevation": 0.0,
+        "opening_value": 100,
+        "valve_control_type": "linear"
       },
       "results": {
         "flow_rate_1": 0.0,

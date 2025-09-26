@@ -505,3 +505,173 @@ class ValveEquipment(BaseEquipment):
             f"-> flowrate={self.flowrate} (m3/s)\n"
             f"-------------------------------------------------------------"
         )
+    
+#===============================================================================================================================================
+#classe pour une vanne de régulation 3 voies (type vanne WNTR)
+#===============================================================================================================================================
+class ThreeWayValveEquipment(BaseEquipment):
+
+    """Classe représentant un équipement de vanne 3 voies.
+    Une vanne  trois voies est en fait composé de 2 vannes 2 voies
+    Le coefficient de perte de charge singulière peut être donné de différentes manières via la classe hydraulic_converter"""
+
+    def __init__(self, id: str, diameter: float, zeta: float = 0.0, elevation: float = 0.0, valve_type: str = 'PRV', initial_status: str = 'OPEN', setting: float = 0.0):
+        super().__init__(id)
+
+        self.diameter = diameter  # diamètre en mètres
+        self.length = 0.01  # une petite longueur en mètres
+        self.roughness = 0.000001  # rugosité en mm faibles, là aussi pour éviter l'effet des pertes de charges linéaires
+        self.elevation = elevation  # l'élévation du tuyau (par défaut, on considère qu'il est horizontal l'élvation est adaptés lors des connections aux équipements)
+        self.zeta = zeta  # le coefficient zeta, qui permet d'obtenir les pertes de charges en Pa
+        self.valve_type = valve_type  # le type de vanne (PRV, PSV, FCV, TCV, GPV)
+        self.initial_status = initial_status  # le statut initial de la vanne (OPEN ou CLOSED), par défaut OPEN
+        self.setting = setting  # la position de la vanne (en %)
+        self.status = initial_status  # l'état de la vanne (OPEN ou CLOSED)
+
+        #creation de trois ports pour le tuyau de connection à partir de l'id de l'équipement
+        Port1 = Port(port_id=f"{id}_P1", parent_equipment_id=id)
+        Port2 = Port(port_id=f"{id}_P2", parent_equipment_id=id)
+        Port3 = Port(port_id=f"{id}_P3", parent_equipment_id=id)
+        #ajout des ports à l'équipement
+        self.add_port(Port1)
+        self.add_port(Port2)
+        self.add_port(Port3)
+        #variables pour stocker les résultats de la simulation
+        self.flowrate_1: Optional[float] = None  # le débit dans le tuyau en m³/s
+        self.flowrate_2: Optional[float] = None  # le débit dans le tuyau en m³/s
+        self.flowrate_3: Optional[float] = None  # le débit dans le tuyau en m³/s
+        #pressions et charge aux noeuds d'entrée et de sortie
+        self.head_1: Optional[float] = None  # la charge totale du fluide, en kPa
+        self.pressure_1: Optional[float] = None # la pression au noeud en kPa
+        self.head_2: Optional[float] = None  # la charge totale du fluide, en kPa
+        self.pressure_2: Optional[float] = None # la pression au noeud en kPa
+        self.head_3: Optional[float] = None  # la charge totale du fluide, en kPa
+        self.pressure_3: Optional[float] = None # la pression au noeud en kPa
+
+    def generate_hydraulic_representation(self, connections: Dict[str, str]) -> List[HydraulicComponent]:
+        """ Du point de vue hydraulique, représenté comme un vanne"""
+        #créeation des jonctions de la pompe
+        J1 = Junction(
+            component_id=connections[f"{self.id}_P1"],
+            elevation=self.elevation,
+            demand=0.0
+        )
+        J2 = Junction(
+            component_id=connections[f"{self.id}_P2"],
+            elevation=self.elevation,
+            demand=0.0
+        )
+        J3 = Junction(
+            component_id=connections[f"{self.id}_P3"],
+            elevation=self.elevation,
+            demand=0.0
+        )
+        #le noeud du milieu
+        J4 = Junction(
+            component_id=f"{self.id}_Mid",
+            elevation=self.elevation,
+            demand=0.0
+        )
+        pipe1 = Pipe(
+            component_id=f"{self.id}_Pipe1",
+            start_node=J1.id,
+            end_node=J4.id,
+            length=self.length,
+            diameter=self.diameter,
+            roughness=self.roughness/1000 #passage de mm en m, pour calculs selon WNTR
+        )
+        valve1 = Valve(
+            component_id=f"{self.id}_Valve1",
+            start_node=J4.id,
+            end_node=J2.id,
+            setting=self.setting,  #voie principale
+            valve_type=self.valve_type,
+            diameter=self.diameter,
+            minor_loss=self.zeta,
+            status=self.initial_status
+        )
+        valve2 = Valve(
+            component_id=f"{self.id}_Valve2",
+            start_node=J4.id,
+            end_node=J3.id,
+            setting=100-self.setting, #voie secondaire
+            valve_type=self.valve_type,
+            diameter=self.diameter,
+            minor_loss=self.zeta,
+            status=self.initial_status
+        )
+        return [J1, J2, J3, pipe1, valve1, valve2]
+
+    #methode pour obtenirs les résutlats de la simulation depuis le réseau hydraulique
+    def get_simulation_results(self, network: HydraulicNetwork, connections: Dict[str, str]):
+
+        #Resultats de débit et perte de charge du tuyau
+        if f"{self.id}_Pipe1" in network.links:
+            link = network.links[f"{self.id}_Pipe1"]
+            self.flowrate_1 = link.flowrate
+        else:  #si le lien n'est pas trouvé, réinitialiser les résultats
+            self.flowrate_1 = None
+        if f"{self.id}_Valve1" in network.links:
+            link = network.links[f"{self.id}_Valve1"]
+            self.flowrate_2 = link.flowrate
+        else:  #si le lien n'est pas trouvé, réinitialiser les résultats
+            self.flowrate_2 = None
+        if f"{self.id}_Valve2" in network.links:
+            link = network.links[f"{self.id}_Valve2"]
+            self.flowrate_3 = link.flowrate
+        else:  #si le lien n'est pas trouvé, réinitialiser les résultats
+            self.flowrate_3 = None
+
+        #resultats de pression aux noeuds de connexion
+        IdEquiv_P1 = connections[f"{self.id}_P1"] #va chercher l'id du noeud équivalent dans le réseau hydraulique
+        IdEquiv_P2 = connections[f"{self.id}_P2"] #va chercher l'id du noeud équivalent dans le réseau hydraulique
+        IdEquiv_P3 = connections[f"{self.id}_P3"] #va chercher l'id du noeud équivalent dans le réseau hydraulique
+        if IdEquiv_P1 in network.nodes:
+            node1 = network.nodes[IdEquiv_P1]
+            node2 = network.nodes[IdEquiv_P2]
+            node3 = network.nodes[IdEquiv_P3]
+
+            self.ports[f"{self.id}_P1"].head = HydraulicConverter.P_mCE_to_Pa(node1.head)
+            self.ports[f"{self.id}_P2"].head = HydraulicConverter.P_mCE_to_Pa(node2.head)
+            self.ports[f"{self.id}_P3"].head = HydraulicConverter.P_mCE_to_Pa(node3.head)
+            self.ports[f"{self.id}_P1"].pressure = HydraulicConverter.P_mCE_to_Pa(node1.head-node1.elevation)
+            self.ports[f"{self.id}_P2"].pressure = HydraulicConverter.P_mCE_to_Pa(node2.head-node2.elevation)
+            self.ports[f"{self.id}_P3"].pressure = HydraulicConverter.P_mCE_to_Pa(node3.head-node3.elevation)
+            self.pressure_1 = HydraulicConverter.P_mCE_to_Pa(node1.head-node1.elevation) #la pression est convertie avant d'être affichée!
+            self.head_1 = HydraulicConverter.P_mCE_to_Pa(node1.head) #la pression est convertie avant d'être affichée!
+            self.pressure_2 = HydraulicConverter.P_mCE_to_Pa(node2.head-node2.elevation) #la pression est convertie avant d'être affichée!
+            self.head_2 = HydraulicConverter.P_mCE_to_Pa(node2.head) # la pression est convertie avant d'être affichée!
+            self.pressure_3 = HydraulicConverter.P_mCE_to_Pa(node3.head-node3.elevation) # la pression est convertie avant d'être affichée!
+            self.head_3 = HydraulicConverter.P_mCE_to_Pa(node3.head) # la pression est convertie avant d'être affichée!
+        else:  #si le noeud n'est pas trouvé, réinitialiser les résultats
+            self.ports[f"{self.id}_P1"].pressure = None
+            self.ports[f"{self.id}_P2"].pressure = None
+            self.ports[f"{self.id}_P1"].head = None
+            self.ports[f"{self.id}_P2"].head = None
+            self.head_1 = None
+            self.pressure_1 = None
+            self.head_2 = None  
+            self.pressure_2 = None
+            self.total_headloss = None
+        
+    
+    #Représentation textuelle de l'équipement
+    def __str__(self) -> str:   
+        return (
+            f"-------------------------------------------------------------\n"
+            f"Equipement du type vanne ValveEquipment(BaseEquipment):\n"
+            f"Propriétés:\n"
+            f"-> id='{self.id}'," 
+            f"diameter={self.diameter},"
+
+            f"Ports de {self.id} :\n"
+            f"-> Port1: {self.ports[f'{self.id}_P1']}, "
+            f"-> Port2: {self.ports[f'{self.id}_P2']}, "
+            f"-> Port3: {self.ports[f'{self.id}_P3']})\n"
+
+            f"Résultats de la simulation:\n"
+            f"-> flowratePipe1={self.flowrate_1} (m3/s)\n"
+            f"-> flowratePipe2={self.flowrate_2} (m3/s)\n"
+            f"-> flowratePipe3={self.flowrate_3} (m3/s)\n"
+            f"-------------------------------------------------------------"
+        )
