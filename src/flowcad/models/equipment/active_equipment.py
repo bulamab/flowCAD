@@ -515,7 +515,7 @@ class ThreeWayValveEquipment(BaseEquipment):
     Une vanne  trois voies est en fait composé de 2 vannes 2 voies
     Le coefficient de perte de charge singulière peut être donné de différentes manières via la classe hydraulic_converter"""
 
-    def __init__(self, id: str, diameter: float, zeta: float = 0.0, elevation: float = 0.0, valve_type: str = 'PRV', initial_status: str = 'OPEN', setting: float = 0.0):
+    def __init__(self, id: str, diameter: float, zeta: float = 0.0, elevation: float = 0.0, valve_type: str = 'PRV', initial_status_1: str = 'OPEN', initial_status_2: str = 'OPEN', setting_1: float = 0.0, setting_2: float = 0.0):
         super().__init__(id)
 
         self.diameter = diameter  # diamètre en mètres
@@ -524,9 +524,10 @@ class ThreeWayValveEquipment(BaseEquipment):
         self.elevation = elevation  # l'élévation du tuyau (par défaut, on considère qu'il est horizontal l'élvation est adaptés lors des connections aux équipements)
         self.zeta = zeta  # le coefficient zeta, qui permet d'obtenir les pertes de charges en Pa
         self.valve_type = valve_type  # le type de vanne (PRV, PSV, FCV, TCV, GPV)
-        self.initial_status = initial_status  # le statut initial de la vanne (OPEN ou CLOSED), par défaut OPEN
-        self.setting = setting  # la position de la vanne (en %)
-        self.status = initial_status  # l'état de la vanne (OPEN ou CLOSED)
+        self.initial_status_1 = initial_status_1  # le statut initial de la vanne (OPEN ou CLOSED), par défaut OPEN
+        self.initial_status_2 = initial_status_2  # le statut initial de la vanne (OPEN ou CLOSED), par défaut OPEN
+        self.setting_1 = setting_1  # la position de la vanne (en %)
+        self.setting_2 = setting_2  # la position de la vanne (en %)
 
         #creation de trois ports pour le tuyau de connection à partir de l'id de l'équipement
         Port1 = Port(port_id=f"{id}_P1", parent_equipment_id=id)
@@ -584,43 +585,36 @@ class ThreeWayValveEquipment(BaseEquipment):
             component_id=f"{self.id}_Valve1",
             start_node=J4.id,
             end_node=J2.id,
-            setting=self.setting,  #voie principale
+            setting=self.setting_1,  #voie principale
             valve_type=self.valve_type,
             diameter=self.diameter,
             minor_loss=self.zeta,
-            status=self.initial_status
+            status=self.initial_status_1
         )
         valve2 = Valve(
             component_id=f"{self.id}_Valve2",
             start_node=J4.id,
             end_node=J3.id,
-            setting=100-self.setting, #voie secondaire
+            setting=self.setting_2, #voie secondaire
             valve_type=self.valve_type,
             diameter=self.diameter,
             minor_loss=self.zeta,
-            status=self.initial_status
+            status=self.initial_status_2
         )
-        return [J1, J2, J3, pipe1, valve1, valve2]
+        return [J1, J2, J3, J4, pipe1, valve1, valve2]
 
     #methode pour obtenirs les résutlats de la simulation depuis le réseau hydraulique
     def get_simulation_results(self, network: HydraulicNetwork, connections: Dict[str, str]):
 
-        #Resultats de débit et perte de charge du tuyau
-        if f"{self.id}_Pipe1" in network.links:
-            link = network.links[f"{self.id}_Pipe1"]
-            self.flowrate_1 = link.flowrate
-        else:  #si le lien n'est pas trouvé, réinitialiser les résultats
-            self.flowrate_1 = None
-        if f"{self.id}_Valve1" in network.links:
-            link = network.links[f"{self.id}_Valve1"]
-            self.flowrate_2 = link.flowrate
-        else:  #si le lien n'est pas trouvé, réinitialiser les résultats
-            self.flowrate_2 = None
-        if f"{self.id}_Valve2" in network.links:
-            link = network.links[f"{self.id}_Valve2"]
-            self.flowrate_3 = link.flowrate
-        else:  #si le lien n'est pas trouvé, réinitialiser les résultats
-            self.flowrate_3 = None
+        # Résultats de débit pour chaque composant
+        components = [f"{self.id}_Pipe1", f"{self.id}_Valve1", f"{self.id}_Valve2"]
+        flowrates = [None, None, None]
+        
+        for i, comp_id in enumerate(components):
+            if comp_id in network.links:
+                flowrates[i] = network.links[comp_id].flowrate
+        print(f"flowrates dans ThreeWayValveEquipment: {flowrates}")
+        self.flowrate_1, self.flowrate_2, self.flowrate_3 = flowrates
 
         #resultats de pression aux noeuds de connexion
         IdEquiv_P1 = connections[f"{self.id}_P1"] #va chercher l'id du noeud équivalent dans le réseau hydraulique

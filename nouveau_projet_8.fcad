@@ -2,10 +2,10 @@
   "flowcad_project": {
     "version": "1.0",
     "metadata": {
-      "created": "2025-09-26T17:03:32.911940",
-      "modified": "2025-09-26T17:03:32.911940",
+      "created": "2025-09-27T09:07:33.525166",
+      "modified": "2025-09-27T09:07:33.525166",
       "author": "FlowCAD User",
-      "description": "Projet FlowCAD"
+      "description": "Projet nouveau_projet_8"
     },
     "canvas": {
       "view_settings": {
@@ -20,8 +20,8 @@
         "type": "BC_P",
         "class": "PressureBoundaryConditionEquipment",
         "position": {
-          "x": -150.0,
-          "y": 125.0
+          "x": -149.0,
+          "y": 106.0
         },
         "transformation": {
           "rotation_angle": 0,
@@ -55,8 +55,8 @@
         "type": "BC_P",
         "class": "PressureBoundaryConditionEquipment",
         "position": {
-          "x": 50.0,
-          "y": 125.0
+          "x": 186.0,
+          "y": 106.0
         },
         "transformation": {
           "rotation_angle": 0,
@@ -86,22 +86,22 @@
         }
       },
       {
-        "id": "V3V_D_p_002",
-        "type": "V3V_D_p",
+        "id": "V3V_M_p_002",
+        "type": "V3V_M_p",
         "class": "ThreeWayValveEquipment",
         "position": {
-          "x": -150.0,
-          "y": -22.0
+          "x": 186.0,
+          "y": -59.0
         },
         "transformation": {
           "rotation_angle": 0,
           "mirror_h": false,
-          "mirror_v": false,
+          "mirror_v": true,
           "scale": 2
         },
         "definition": {
-          "display_name": "Vanne 3 voies diviseuse, progressive",
-          "description": "vanne 3 voies diviseuse, progressive",
+          "display_name": "Vanne 3 voies mélangeuse, progressive",
+          "description": "vanne 3 voies mélangeuse, progressive",
           "equipment_class": "ThreeWayValveEquipment",
           "color": "#FF6B6B"
         },
@@ -140,11 +140,11 @@
         "type": "T3p",
         "class": "TeeConnectionEquipment",
         "position": {
-          "x": 65.0,
-          "y": -7.0
+          "x": -134.0,
+          "y": -44.0
         },
         "transformation": {
-          "rotation_angle": 180,
+          "rotation_angle": 0,
           "mirror_h": false,
           "mirror_v": false,
           "scale": 2
@@ -191,20 +191,20 @@
         "id": "pipe_000",
         "points": [
           {
-            "x": -105.0,
-            "y": 170.0
+            "x": -104.0,
+            "y": 151.0
           },
           {
-            "x": -105.0,
-            "y": 110.5
+            "x": -104.0,
+            "y": 82.5
           },
           {
-            "x": -105.0,
-            "y": 110.5
+            "x": -104.0,
+            "y": 82.5
           },
           {
-            "x": -105.0,
-            "y": 51.0
+            "x": -104.0,
+            "y": 14.0
           }
         ],
         "connections": {
@@ -213,7 +213,7 @@
             "port_id": "P1"
           },
           "end_port": {
-            "equipment_id": "V3V_D_p_002",
+            "equipment_id": "T3p_003",
             "port_id": "P1"
           }
         },
@@ -237,30 +237,30 @@
         "id": "pipe_001",
         "points": [
           {
-            "x": -105.0,
-            "y": -5.0
+            "x": -104.0,
+            "y": -42.0
           },
           {
-            "x": -105.0,
-            "y": -116.0
+            "x": -104.0,
+            "y": -228.0
           },
           {
-            "x": 95.0,
-            "y": -116.0
+            "x": 231.0,
+            "y": -228.0
           },
           {
-            "x": 95.0,
-            "y": -5.0
+            "x": 231.0,
+            "y": -42.0
           }
         ],
         "connections": {
           "start_port": {
-            "equipment_id": "V3V_D_p_002",
+            "equipment_id": "T3p_003",
             "port_id": "P2"
           },
           "end_port": {
-            "equipment_id": "T3p_003",
-            "port_id": "P1"
+            "equipment_id": "V3V_M_p_002",
+            "port_id": "P2"
           }
         },
         "properties": {
@@ -283,30 +283,30 @@
         "id": "pipe_002",
         "points": [
           {
-            "x": -76.0,
-            "y": 23.0
+            "x": 231.0,
+            "y": 14.0
           },
           {
-            "x": -4.5,
-            "y": 23.0
+            "x": 231.0,
+            "y": 82.5
           },
           {
-            "x": -4.5,
-            "y": 23.0
+            "x": 231.0,
+            "y": 82.5
           },
           {
-            "x": 67.0,
-            "y": 23.0
+            "x": 231.0,
+            "y": 151.0
           }
         ],
         "connections": {
           "start_port": {
-            "equipment_id": "V3V_D_p_002",
-            "port_id": "P3"
+            "equipment_id": "V3V_M_p_002",
+            "port_id": "P1"
           },
           "end_port": {
-            "equipment_id": "T3p_003",
-            "port_id": "P3"
+            "equipment_id": "BC_P_001",
+            "port_id": "P1"
           }
         },
         "properties": {
@@ -329,30 +329,30 @@
         "id": "pipe_003",
         "points": [
           {
-            "x": 95.0,
-            "y": 51.0
+            "x": 202.0,
+            "y": -14.0
           },
           {
-            "x": 95.0,
-            "y": 110.5
+            "x": 63.0,
+            "y": -14.0
           },
           {
-            "x": 95.0,
-            "y": 110.5
+            "x": 63.0,
+            "y": -14.0
           },
           {
-            "x": 95.0,
-            "y": 170.0
+            "x": -76.0,
+            "y": -14.0
           }
         ],
         "connections": {
           "start_port": {
-            "equipment_id": "T3p_003",
-            "port_id": "P2"
+            "equipment_id": "V3V_M_p_002",
+            "port_id": "P3"
           },
           "end_port": {
-            "equipment_id": "BC_P_001",
-            "port_id": "P1"
+            "equipment_id": "T3p_003",
+            "port_id": "P3"
           }
         },
         "properties": {

@@ -444,6 +444,7 @@ class RightPanel(QWidget):
         # Ajouter les résultats ------------------------------------------
         results = properties_data.get('results', {})
         for result_name, result_value in results.items():
+            print(f"🔢 Traitement du résultat: {result_name} = {result_value}")
             if self.is_pressure_property(result_name):
                 result_value =self.unit_mgr.format_pressure(float(result_value))
             elif self.is_flow_property(result_name):

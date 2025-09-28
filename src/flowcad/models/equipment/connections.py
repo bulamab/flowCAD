@@ -156,9 +156,9 @@ class TeeConnectionEquipment(BaseEquipment):
         self.add_port(Port2)
         self.add_port(Port3)
         #variables pour stocker les résultats de la simulation
-        self.flowrate_Pipe1: Optional[float] = None  # le débit dans le tuyau P1 en m³/s
-        self.flowrate_Pipe2: Optional[float] = None  # le débit dans le tuyau P2 en m³/s
-        self.flowrate_Pipe3: Optional[float] = None  # le débit dans le tuyau P3 en m³/s
+        self.flowrate_1: Optional[float] = None  # le débit dans le tuyau P1 en m³/s
+        self.flowrate_2: Optional[float] = None  # le débit dans le tuyau P2 en m³/s
+        self.flowrate_3: Optional[float] = None  # le débit dans le tuyau P3 en m³/s
         #variables pour stocker les résultats de la simulation
         self.head_1: Optional[float] = None  # la charge totale du fluide, en kPa
         self.pressure_1: Optional[float] = None # la pression au noeud en kPa
@@ -224,19 +224,19 @@ class TeeConnectionEquipment(BaseEquipment):
         #Resultats de débit et perte de charge du tuyau
         if f"{self.id}_Pipe1" in network.links:
             link = network.links[f"{self.id}_Pipe1"]
-            self.flowrate_Pipe1 = link.flowrate
+            self.flowrate_1 = link.flowrate
         else:  #si le lien n'est pas trouvé, réinitialiser les résultats
-            self.flowrate_Pipe1 = None
+            self.flowrate_1 = None
         if f"{self.id}_Pipe2" in network.links:
             link = network.links[f"{self.id}_Pipe2"]
-            self.flowrate_Pipe2 = link.flowrate
+            self.flowrate_2 = link.flowrate
         else:  #si le lien n'est pas trouvé, réinitialiser les résultats
-            self.flowrate_Pipe2 = None
+            self.flowrate_2 = None
         if f"{self.id}_Pipe3" in network.links:
             link = network.links[f"{self.id}_Pipe3"]
-            self.flowrate_Pipe3 = link.flowrate
+            self.flowrate_3 = link.flowrate
         else:  #si le lien n'est pas trouvé, réinitialiser les résultats
-            self.flowrate_Pipe3 = None
+            self.flowrate_3 = None
 
         #resultats de pression aux noeuds de connexion
         IdEquiv_P1 = connections[f"{self.id}_P1"] #va chercher l'id du noeud équivalent dans le réseau hydraulique
@@ -290,9 +290,9 @@ class TeeConnectionEquipment(BaseEquipment):
             f"-> Port3: {self.ports[f'{self.id}_P3']})\n"
 
             f"Résultats de la simulation:\n"
-            f"-> flowratePipe1={self.flowrate_Pipe1} (m3/s)\n"
-            f"-> flowratePipe2={self.flowrate_Pipe2} (m3/s)\n"
-            f"-> flowratePipe3={self.flowrate_Pipe3} (m3/s)\n"
+            f"-> flowratePipe1={self.flowrate_1} (m3/s)\n"
+            f"-> flowratePipe2={self.flowrate_2} (m3/s)\n"
+            f"-> flowratePipe3={self.flowrate_3} (m3/s)\n"
             f"-------------------------------------------------------------"
         )
 

@@ -188,9 +188,9 @@
         "valve_control_type": "linear"
       },
       "results": {
-        "flow_rate_1": 0.0,
-        "flow_rate_2": 0.0,
-        "flow_rate_3": 0.0,
+        "flowrate_1": 0.0,
+        "flowrate_2": 0.0,
+        "flowrate_3": 0.0,
         "pressure_1": 0.0,
         "pressure_2": 0.0,
         "pressure_3": 0.0
@@ -210,9 +210,9 @@
         "valve_control_type": "linear"
       },
       "results": {
-        "flow_rate_1": 0.0,
-        "flow_rate_2": 0.0,
-        "flow_rate_3": 0.0,
+        "flowrate_1": 0.0,
+        "flowrate_2": 0.0,
+        "flowrate_3": 0.0,
         "pressure_1": 0.0,
         "pressure_2": 0.0,
         "pressure_3": 0.0
@@ -360,9 +360,9 @@
         "elevation": 0.0
       },
       "results": {
-        "flow_rate_1": 0.0,
-        "flow_rate_2": 0.0,
-        "flow_rate_3": 0.0,
+        "flowrate_1": 0.0,
+        "flowrate_2": 0.0,
+        "flowrate_3": 0.0,
         "pressure_1": 0.0,
         "head_1": 0.0,
         "pressure_2": 0.0,

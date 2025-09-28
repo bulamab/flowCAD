@@ -83,6 +83,12 @@ class EquipmentFactory:
                 properties.get('pressure_bar', 1.0),
                 properties.get('elevation', 0.0)
             )
+        elif equipment_class.__name__ == 'FlowRateBoundaryConditionEquipment':
+            return equipment_class(
+                equipment_id,
+                properties.get('flow_rate_m3s', 0.1),
+                properties.get('elevation', 0.0)
+            )
         elif equipment_class.__name__ == 'TeeConnectionEquipment':
             return equipment_class(
                 equipment_id,
@@ -182,15 +188,20 @@ class EquipmentFactory:
                     raise ValueError("La valeur d'ouverture doit être entre 0 et 100")
                 opening_value = max(0.0, min(100.0, opening_value))  # Clamp entre 0 et 100
                 if opening_value == 0:
-                    status = 'CLOSED'
+                    status_1 = 'CLOSED'
+                    status_2 = 'OPEN'
                 elif opening_value == 100:
-                    status = 'OPEN'
+                    status_1 = 'OPEN'
+                    status_2 = 'CLOSED'
                 else:
-                    status = 'ACTIVE'
+                    status_1 = 'ACTIVE'
+                    status_2 = 'ACTIVE'
                 #relation linéaire entre l'ouverture et le kv effectif
-                kv_eff = properties.get('kv_s', 1.0) * (opening_value) / 100
+                kv_eff_1 = properties.get('kv_s', 1.0) * (opening_value) / 100
+                kv_eff_2 = properties.get('kv_s', 1.0) * (100 - opening_value) / 100
             elif valve_control_type == 'equal_percentage':
-                opening_value = float(opening_value)
+                pass
+                '''opening_value = float(opening_value)
                 if opening_value < 0 or opening_value > 100:
                     raise ValueError("La valeur d'ouverture doit être entre 0 et 100")
                 opening_value = max(0.0, min(100.0, opening_value))  # Clamp entre 0 et 100
@@ -211,16 +222,21 @@ class EquipmentFactory:
                 if relative_opening < relative_opening_switch:
                     kv_eff = kv_s * (relative_opening / relative_opening_switch) * relative_kv_switch
                 else:
-                    kv_eff = e**(n * (relative_opening - 1)) * kv_s
+                    kv_eff = e**(n * (relative_opening - 1)) * kv_s'''
 
             else:
                 raise ValueError(f"Type de contrôle de vanne inconnu: {valve_control_type}")
             
-            zeta_active = hc.HydraulicConverter.zeta_from_kv(
-                kv=kv_eff,
+            zeta_active_1 = hc.HydraulicConverter.zeta_from_kv(
+                kv=kv_eff_1,
                 diameter=properties.get('diameter_m', 0.1)
             )
-            print(f"zeta_active calculé dans EquipmentFactory: {zeta_active}")
+            zeta_active_2 = hc.HydraulicConverter.zeta_from_kv(
+                kv=kv_eff_2,
+                diameter=properties.get('diameter_m', 0.1)
+            )
+            print(f"zeta_active_1 calculé dans EquipmentFactory: {zeta_active_1}")
+            print(f"zeta_active_2 calculé dans EquipmentFactory: {zeta_active_2 }")
 
             return equipment_class(
                 id=equipment_id,
@@ -228,8 +244,10 @@ class EquipmentFactory:
                 zeta=zeta,
                 elevation=properties.get('elevation', 0.0),
                 valve_type='TCV',
-                initial_status=status,
-                setting=zeta_active
+                initial_status_1=status_1,
+                initial_status_2=status_2,
+                setting_1=zeta_active_1,
+                setting_2=zeta_active_2
             )
         # Ajouter d'autres types au fur et à mesure...
         else:

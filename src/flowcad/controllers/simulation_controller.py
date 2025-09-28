@@ -84,7 +84,16 @@ class SimulationController:
         # Résultats communs pour tous les types
         if hasattr(business_eq, 'flowrate') and business_eq.flowrate is not None:
             results['flow_rate'] = business_eq.flowrate
-        
+
+        if hasattr(business_eq, 'flowrate_1') and business_eq.flowrate_1 is not None:
+            results['flowrate_1'] = business_eq.flowrate_1
+
+        if hasattr(business_eq, 'flowrate_2') and business_eq.flowrate_2 is not None:
+            results['flowrate_2'] = business_eq.flowrate_2
+
+        if hasattr(business_eq, 'flowrate_3') and business_eq.flowrate_3 is not None:
+            results['flowrate_3'] = business_eq.flowrate_3
+
         # Résultats spécifiques selon le type
         if hasattr(business_eq, 'headloss') and business_eq.headloss is not None:
             results['headloss'] = business_eq.headloss
