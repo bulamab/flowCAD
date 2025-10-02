@@ -23,6 +23,7 @@ class SelectiveEditTreeWidget(QTreeWidget):
     
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.unit_mgr = UnitManager()
         self.setup_styles()
         self.current_editing_item = None
         
@@ -159,6 +160,11 @@ class SelectiveEditTreeWidget(QTreeWidget):
                     prop_item = top_item.child(j)
                     original_name = prop_item.data(0, Qt.UserRole)  # Nom technique original
                     prop_name = prop_item.text(0)
+
+                    if original_name == "valve_control_type":
+                        # Ne pas inclure cette propriété
+                        continue
+
                     if original_name == "curve_points":
                         # Récupérer la valeur cachée pour curve_points
                         prop_value = prop_item.data(1, Qt.UserRole)
@@ -167,16 +173,15 @@ class SelectiveEditTreeWidget(QTreeWidget):
                         valve_widget = self.itemWidget(prop_item, 1)
                         prop_value = valve_widget.get_value() if valve_widget else 0
                         print(f"Valeur du slider pour 'opening_value': {prop_value}")
-                    elif original_name == "valve_control_type":
-                        # Ne pas inclure cette propriété dans les mises à jour
-                        continue
+                    elif original_name == "flow_rate_m3s":
+                        # Reconvertir depuis l'unité utilisateur vers m³/s
+                        prop_value = self.unit_mgr.input_flow_to_m3s(float(prop_item.text(1)))
                     else:
                         # Valeur normale pour les autres propriétés
                         prop_value = float(prop_item.text(1))  # temporaire, convertir en float
                     if original_name:
                         properties[original_name] = prop_value
-                    else:
-                        properties[prop_name] = prop_value
+
                 break
                 
         return properties
@@ -205,13 +210,14 @@ class RightPanel(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.unit_mgr = UnitManager()
         self.setFixedWidth(300)  # Largeur fixe pour le panneau
         self.setStyleSheet(
             "background-color: #e8e8e8; "
             "border: 1px solid #ccc;"
             "border-right: 1px solid #ccc;")
 
-        self.unit_mgr = UnitManager()
+        
 
         # Pour l'instant, juste un label
         self.setup_ui()
@@ -322,6 +328,7 @@ class RightPanel(QWidget):
             'velocity': 'vitesse (m/s)',
             'opening_value': 'État d\'ouverture',
             'valve_control_type': 'Type de contrôle de vanne',
+            'flow_rate_m3s': f"Débit {self.unit_mgr.get_flow_unit_symbol()}",
             # Ajoutez d'autres mappings selon vos besoins
         }
             
@@ -394,7 +401,13 @@ class RightPanel(QWidget):
         properties = properties_data.get('properties', {})
         for prop_name, prop_value in properties.items():
             display_name = self.format_property_name(prop_name)
-            if prop_name == "curve_points":
+            if prop_name == "flow_rate_m3s":
+                # Convertir depuis m³/s vers l'unité utilisateur
+                prop_value_display = self.unit_mgr.display_flow(float(prop_value))
+                prop_item = QTreeWidgetItem(properties_item, [display_name, str(prop_value_display)])
+                prop_item.setFlags(prop_item.flags() | Qt.ItemIsEditable)
+                prop_item.setData(0, Qt.UserRole, prop_name)  # Nom technique original
+            elif prop_name == "curve_points":
                 prop_item = QTreeWidgetItem(properties_item, [display_name, ""])  # Valeur vide
                 
                 # Créer le bouton

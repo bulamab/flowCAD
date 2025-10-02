@@ -1,0 +1,419 @@
+{
+  "flowcad_project": {
+    "version": "1.0",
+    "metadata": {
+      "created": "2025-10-02T16:47:48.299617",
+      "modified": "2025-10-02T16:47:48.299617",
+      "author": "FlowCAD User",
+      "description": "Projet FlowCAD"
+    },
+    "canvas": {
+      "view_settings": {
+        "zoom": 1.0,
+        "center_x": 0.0,
+        "center_y": 0.0
+      }
+    },
+    "equipment": [
+      {
+        "id": "C1_1_000",
+        "type": "C1_1",
+        "class": "HydraulicResistanceEquipment",
+        "position": {
+          "x": -51.5,
+          "y": -257.0
+        },
+        "transformation": {
+          "rotation_angle": 0,
+          "mirror_h": false,
+          "mirror_v": false,
+          "scale": 2
+        },
+        "definition": {
+          "display_name": "Consomateur générique",
+          "description": "Consommateur générique",
+          "equipment_class": "HydraulicResistanceEquipment",
+          "color": "#FF6B6B"
+        },
+        "properties": {
+          "diameter_m": 2.0,
+          "zeta": 1.0,
+          "elevation": 0.0,
+          "opening_value": 100,
+          "valve_control_type": "binary"
+        },
+        "results": {
+          "flow_rate": 0.0,
+          "pressure_1": 0.0,
+          "pressure_2": 0.0,
+          "head_1": 0.0,
+          "head_2": 0.0
+        },
+        "ports": {
+          "P1": {
+            "status": "connected",
+            "connected_to": null
+          },
+          "P2": {
+            "status": "connected",
+            "connected_to": null
+          }
+        }
+      },
+      {
+        "id": "p1_001",
+        "type": "p1",
+        "class": "PumpEquipment",
+        "position": {
+          "x": -135.85000000000002,
+          "y": 26.999999999999993
+        },
+        "transformation": {
+          "rotation_angle": 0,
+          "mirror_h": false,
+          "mirror_v": false,
+          "scale": 2
+        },
+        "definition": {
+          "display_name": "Pompe",
+          "description": "pompe centrifuge",
+          "equipment_class": "PumpEquipment",
+          "color": "#FF6B6B"
+        },
+        "properties": {
+          "curve_points": [
+            [
+              0.04,
+              20000
+            ]
+          ],
+          "elevation": 0.0
+        },
+        "results": {
+          "flow_rate": 0.0,
+          "pressure_1": 0.0,
+          "head_1": 0.0,
+          "pressure_2": 0.0,
+          "head_2": 0.0,
+          "head_gain": 0.0
+        },
+        "ports": {
+          "P1": {
+            "status": "connected",
+            "connected_to": null
+          },
+          "P2": {
+            "status": "connected",
+            "connected_to": null
+          }
+        }
+      },
+      {
+        "id": "V2V_p_002",
+        "type": "V2V_p",
+        "class": "ValveEquipment",
+        "position": {
+          "x": 89.0,
+          "y": 5.0
+        },
+        "transformation": {
+          "rotation_angle": 180,
+          "mirror_h": false,
+          "mirror_v": false,
+          "scale": 2
+        },
+        "definition": {
+          "display_name": "Vanne 2 voies, progressive",
+          "description": "vanne 2 voies, progressive",
+          "equipment_class": "ValveEquipment",
+          "color": "#FF6B6B"
+        },
+        "properties": {
+          "diameter_m": 0.1,
+          "kv_s": 1.0,
+          "elevation": 0.0,
+          "opening_value": 100,
+          "valve_control_type": "equal_percentage"
+        },
+        "results": {
+          "flow_rate": 0.0,
+          "pressure_1": 0.0,
+          "pressure_2": 0.0,
+          "head_1": 0.0,
+          "head_2": 0.0
+        },
+        "ports": {
+          "P1": {
+            "status": "connected",
+            "connected_to": null
+          },
+          "P2": {
+            "status": "connected",
+            "connected_to": null
+          }
+        }
+      },
+      {
+        "id": "BC_P_003",
+        "type": "BC_P",
+        "class": "PressureBoundaryConditionEquipment",
+        "position": {
+          "x": -150.85000000000002,
+          "y": 225.0
+        },
+        "transformation": {
+          "rotation_angle": 0,
+          "mirror_h": false,
+          "mirror_v": false,
+          "scale": 2
+        },
+        "definition": {
+          "display_name": "Pression Fixe",
+          "description": "Condition limite de pression fixe",
+          "equipment_class": "PressureBoundaryConditionEquipment",
+          "color": "#1E90FF"
+        },
+        "properties": {
+          "pressure_bar": 3.0,
+          "elevation": 0.0
+        },
+        "results": {
+          "pressure_1": 0.0,
+          "head_1": 0.0
+        },
+        "ports": {
+          "P1": {
+            "status": "connected",
+            "connected_to": null
+          }
+        }
+      },
+      {
+        "id": "BC_P_004",
+        "type": "BC_P",
+        "class": "PressureBoundaryConditionEquipment",
+        "position": {
+          "x": 89.0,
+          "y": 225.0
+        },
+        "transformation": {
+          "rotation_angle": 0,
+          "mirror_h": false,
+          "mirror_v": false,
+          "scale": 2
+        },
+        "definition": {
+          "display_name": "Pression Fixe",
+          "description": "Condition limite de pression fixe",
+          "equipment_class": "PressureBoundaryConditionEquipment",
+          "color": "#1E90FF"
+        },
+        "properties": {
+          "pressure_bar": 3.0,
+          "elevation": 0.0
+        },
+        "results": {
+          "pressure_1": 0.0,
+          "head_1": 0.0
+        },
+        "ports": {
+          "P1": {
+            "status": "connected",
+            "connected_to": null
+          }
+        }
+      }
+    ],
+    "pipes": [
+      {
+        "id": "pipe_000",
+        "points": [
+          {
+            "x": -105.85000000000002,
+            "y": 270.0
+          },
+          {
+            "x": -105.85000000000002,
+            "y": 89.69999999999999
+          },
+          {
+            "x": -105.84999924409449,
+            "y": 89.69999999999999
+          },
+          {
+            "x": -105.84999924409449,
+            "y": 82.99999974803148
+          }
+        ],
+        "connections": {
+          "start_port": {
+            "equipment_id": "BC_P_003",
+            "port_id": "P1"
+          },
+          "end_port": {
+            "equipment_id": "p1_001",
+            "port_id": "P1"
+          }
+        },
+        "properties": {
+          "length_m": 1.0,
+          "diameter_m": 0.1,
+          "roughness_mm": 0.1
+        },
+        "results": {
+          "flow_rate": 0.0,
+          "headloss": 0.0,
+          "velocity": 0.0,
+          "pressure_1": 0.0,
+          "head_1": 0.0,
+          "pressure_2": 0.0,
+          "head_2": 0.0,
+          "total_headloss": 0.0
+        }
+      },
+      {
+        "id": "pipe_001",
+        "points": [
+          {
+            "x": -105.84999924409449,
+            "y": 30.99999979842519
+          },
+          {
+            "x": -105.84999924409449,
+            "y": -187.0
+          },
+          {
+            "x": -49.5,
+            "y": -187.0
+          },
+          {
+            "x": -49.5,
+            "y": -187.0
+          }
+        ],
+        "connections": {
+          "start_port": {
+            "equipment_id": "p1_001",
+            "port_id": "P2"
+          },
+          "end_port": {
+            "equipment_id": "C1_1_000",
+            "port_id": "P1"
+          }
+        },
+        "properties": {
+          "length_m": 1.0,
+          "diameter_m": 0.1,
+          "roughness_mm": 0.1
+        },
+        "results": {
+          "flow_rate": 0.0,
+          "headloss": 0.0,
+          "velocity": 0.0,
+          "pressure_1": 0.0,
+          "head_1": 0.0,
+          "pressure_2": 0.0,
+          "head_2": 0.0,
+          "total_headloss": 0.0
+        }
+      },
+      {
+        "id": "pipe_002",
+        "points": [
+          {
+            "x": 86.5,
+            "y": -187.0
+          },
+          {
+            "x": 134.0,
+            "y": -187.0
+          },
+          {
+            "x": 134.0,
+            "y": 22.0
+          },
+          {
+            "x": 134.0,
+            "y": 22.0
+          }
+        ],
+        "connections": {
+          "start_port": {
+            "equipment_id": "C1_1_000",
+            "port_id": "P2"
+          },
+          "end_port": {
+            "equipment_id": "V2V_p_002",
+            "port_id": "P1"
+          }
+        },
+        "properties": {
+          "length_m": 1.0,
+          "diameter_m": 0.1,
+          "roughness_mm": 0.1
+        },
+        "results": {
+          "flow_rate": 0.0,
+          "headloss": 0.0,
+          "velocity": 0.0,
+          "pressure_1": 0.0,
+          "head_1": 0.0,
+          "pressure_2": 0.0,
+          "head_2": 0.0,
+          "total_headloss": 0.0
+        }
+      },
+      {
+        "id": "pipe_003",
+        "points": [
+          {
+            "x": 134.0,
+            "y": 78.0
+          },
+          {
+            "x": 134.0,
+            "y": 174.0
+          },
+          {
+            "x": 134.0,
+            "y": 174.0
+          },
+          {
+            "x": 134.0,
+            "y": 270.0
+          }
+        ],
+        "connections": {
+          "start_port": {
+            "equipment_id": "V2V_p_002",
+            "port_id": "P2"
+          },
+          "end_port": {
+            "equipment_id": "BC_P_004",
+            "port_id": "P1"
+          }
+        },
+        "properties": {
+          "length_m": 1.0,
+          "diameter_m": 0.1,
+          "roughness_mm": 0.1
+        },
+        "results": {
+          "flow_rate": 0.0,
+          "headloss": 0.0,
+          "velocity": 0.0,
+          "pressure_1": 0.0,
+          "head_1": 0.0,
+          "pressure_2": 0.0,
+          "head_2": 0.0,
+          "total_headloss": 0.0
+        }
+      }
+    ],
+    "simulation": {
+      "last_run": null,
+      "status": "not_run",
+      "global_results": {}
+    }
+  }
+}

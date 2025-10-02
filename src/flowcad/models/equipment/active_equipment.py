@@ -213,8 +213,8 @@ class FlowRateBoundaryConditionEquipment(BaseEquipment):
         self.add_port(Port1)
 
         #variables pour stocker les résultats de la simulation
-        self.head: Optional[float] = None  # la charge totale du fluide, en kPa
-        self.pressure: Optional[float] = None # la pression au noeud en kPa
+        self.head_1: Optional[float] = None  # la charge totale du fluide, en kPa
+        self.pressure_1: Optional[float] = None # la pression au noeud en kPa
 
     
     def generate_hydraulic_representation(self,  connections: Dict[str, str]) -> List[HydraulicComponent]:
@@ -234,11 +234,11 @@ class FlowRateBoundaryConditionEquipment(BaseEquipment):
         IdEquiv = connections[f"{self.id}_P1"] #va chercher l'id du noeud équivalent dans le réseau hydraulique
         if IdEquiv in network.nodes:
             node = network.nodes[IdEquiv]
-            self.head = HydraulicConverter.P_mCE_to_Pa(node.head) #la pression est convertie avant d'être affichée!
+            self.head_1 = HydraulicConverter.P_mCE_to_Pa(node.head) #la pression est convertie avant d'être affichée!
             #par défaut, basé sur un élément WNTR du type jonction, qui ne spécifie que la charge totale
             #la pression et l'élévation ne sont pas spécifiées. Il semblerait que WNTR considère la charge comme 100% due à la hauteur
             #dans notre cas, on considère une élévation de base, et donc  on en déduit la pression
-            self.pressure = HydraulicConverter.P_mCE_to_Pa(node.head-self.elevation)
+            self.pressure_1 = HydraulicConverter.P_mCE_to_Pa(node.head-self.elevation)
 
     #représentation textuelle
     def __str__(self) -> str:
@@ -254,7 +254,7 @@ class FlowRateBoundaryConditionEquipment(BaseEquipment):
             f"Ports de {self.id} :\n"
             f"-> Port1: {self.ports[f'{self.id}_P1']}\n "
             f"Résultats de la simulation:\n"
-            f"-> head={self.head} (kPa), pressure={self.pressure} (kPa)\n"
+            f"-> head_1={self.head_1} (kPa), pressure_1={self.pressure_1} (kPa)\n"
             f"-------------------------------------------------------------"
         )
     

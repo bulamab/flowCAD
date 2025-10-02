@@ -1,0 +1,507 @@
+{
+  "flowcad_project": {
+    "version": "1.0",
+    "metadata": {
+      "created": "2025-10-02T16:30:16.993783",
+      "modified": "2025-10-02T16:30:16.993783",
+      "author": "FlowCAD User",
+      "description": "Projet Vannes_Arret"
+    },
+    "canvas": {
+      "view_settings": {
+        "zoom": 1.0,
+        "center_x": 0.0,
+        "center_y": 0.0
+      }
+    },
+    "equipment": [
+      {
+        "id": "Vs_000",
+        "type": "Vs",
+        "class": "HydraulicResistanceEquipment",
+        "position": {
+          "x": -110.0,
+          "y": -87.5
+        },
+        "transformation": {
+          "rotation_angle": 0,
+          "mirror_h": false,
+          "mirror_v": false,
+          "scale": 2
+        },
+        "definition": {
+          "display_name": "Soupape",
+          "description": "soupape",
+          "equipment_class": "HydraulicResistanceEquipment",
+          "color": "#FF6B6B"
+        },
+        "properties": {
+          "diameter_m": 2.0,
+          "zeta": 1.0,
+          "elevation": 0.0,
+          "opening_value": 100,
+          "valve_control_type": "binary"
+        },
+        "results": {
+          "flow_rate": 0.0,
+          "pressure_1": 0.0,
+          "pressure_2": 0.0,
+          "head_1": 0.0,
+          "head_2": 0.0
+        },
+        "ports": {
+          "P1": {
+            "status": "connected",
+            "connected_to": null
+          },
+          "P2": {
+            "status": "connected",
+            "connected_to": null
+          }
+        }
+      },
+      {
+        "id": "Vb_001",
+        "type": "Vb",
+        "class": "HydraulicResistanceEquipment",
+        "position": {
+          "x": -110.0,
+          "y": -200.0
+        },
+        "transformation": {
+          "rotation_angle": 0,
+          "mirror_h": false,
+          "mirror_v": false,
+          "scale": 2
+        },
+        "definition": {
+          "display_name": "Vanne à Boisseau",
+          "description": "vanne à boisseau",
+          "equipment_class": "HydraulicResistanceEquipment",
+          "color": "#FF6B6B"
+        },
+        "properties": {
+          "diameter_m": 2.0,
+          "zeta": 1.0,
+          "elevation": 0.0,
+          "opening_value": 100,
+          "valve_control_type": "binary"
+        },
+        "results": {
+          "flow_rate": 0.0,
+          "pressure_1": 0.0,
+          "pressure_2": 0.0,
+          "head_1": 0.0,
+          "head_2": 0.0
+        },
+        "ports": {
+          "P1": {
+            "status": "connected",
+            "connected_to": null
+          },
+          "P2": {
+            "status": "connected",
+            "connected_to": null
+          }
+        }
+      },
+      {
+        "id": "Vg_002",
+        "type": "Vg",
+        "class": "HydraulicResistanceEquipment",
+        "position": {
+          "x": -110.0,
+          "y": 137.5
+        },
+        "transformation": {
+          "rotation_angle": 0,
+          "mirror_h": false,
+          "mirror_v": false,
+          "scale": 2
+        },
+        "definition": {
+          "display_name": "Vanne à glissière",
+          "description": "vanne à glissière",
+          "equipment_class": "HydraulicResistanceEquipment",
+          "color": "#FF6B6B"
+        },
+        "properties": {
+          "diameter_m": 2.0,
+          "zeta": 1.0,
+          "elevation": 0.0,
+          "opening_value": 100,
+          "valve_control_type": "binary"
+        },
+        "results": {
+          "flow_rate": 0.0,
+          "pressure_1": 0.0,
+          "pressure_2": 0.0,
+          "head_1": 0.0,
+          "head_2": 0.0
+        },
+        "ports": {
+          "P1": {
+            "status": "connected",
+            "connected_to": null
+          },
+          "P2": {
+            "status": "connected",
+            "connected_to": null
+          }
+        }
+      },
+      {
+        "id": "V1_003",
+        "type": "V1",
+        "class": "HydraulicResistanceEquipment",
+        "position": {
+          "x": -110.0,
+          "y": 25.0
+        },
+        "transformation": {
+          "rotation_angle": 0,
+          "mirror_h": false,
+          "mirror_v": false,
+          "scale": 2
+        },
+        "definition": {
+          "display_name": "Organe d'arrêt",
+          "description": "soupapes, vannes à glissière, clapets, etc.",
+          "equipment_class": "HydraulicResistanceEquipment",
+          "color": "#FF6B6B"
+        },
+        "properties": {
+          "diameter_m": 2.0,
+          "zeta": 1.0,
+          "elevation": 0.0,
+          "opening_value": 100,
+          "valve_control_type": "binary"
+        },
+        "results": {
+          "flow_rate": 0.0,
+          "pressure_1": 0.0,
+          "pressure_2": 0.0,
+          "head_1": 0.0,
+          "head_2": 0.0
+        },
+        "ports": {
+          "P1": {
+            "status": "connected",
+            "connected_to": null
+          },
+          "P2": {
+            "status": "connected",
+            "connected_to": null
+          }
+        }
+      },
+      {
+        "id": "BC_P_004",
+        "type": "BC_P",
+        "class": "PressureBoundaryConditionEquipment",
+        "position": {
+          "x": -125.0,
+          "y": 250.0
+        },
+        "transformation": {
+          "rotation_angle": 0,
+          "mirror_h": false,
+          "mirror_v": false,
+          "scale": 2
+        },
+        "definition": {
+          "display_name": "Pression Fixe",
+          "description": "Condition limite de pression fixe",
+          "equipment_class": "PressureBoundaryConditionEquipment",
+          "color": "#1E90FF"
+        },
+        "properties": {
+          "pressure_bar": 4.0,
+          "elevation": 0.0
+        },
+        "results": {
+          "pressure_1": 0.0,
+          "head_1": 0.0
+        },
+        "ports": {
+          "P1": {
+            "status": "connected",
+            "connected_to": null
+          }
+        }
+      },
+      {
+        "id": "BC_P_005",
+        "type": "BC_P",
+        "class": "PressureBoundaryConditionEquipment",
+        "position": {
+          "x": 176.74900624999998,
+          "y": 250.0
+        },
+        "transformation": {
+          "rotation_angle": 0,
+          "mirror_h": false,
+          "mirror_v": false,
+          "scale": 2
+        },
+        "definition": {
+          "display_name": "Pression Fixe",
+          "description": "Condition limite de pression fixe",
+          "equipment_class": "PressureBoundaryConditionEquipment",
+          "color": "#1E90FF"
+        },
+        "properties": {
+          "pressure_bar": 3.0,
+          "elevation": 0.0
+        },
+        "results": {
+          "pressure_1": 0.0,
+          "head_1": 0.0
+        },
+        "ports": {
+          "P1": {
+            "status": "connected",
+            "connected_to": null
+          }
+        }
+      }
+    ],
+    "pipes": [
+      {
+        "id": "pipe_000",
+        "points": [
+          {
+            "x": -80.0,
+            "y": 295.0
+          },
+          {
+            "x": -80.0,
+            "y": 245.25
+          },
+          {
+            "x": -80.0,
+            "y": 245.25
+          },
+          {
+            "x": -80.0,
+            "y": 195.5
+          }
+        ],
+        "connections": {
+          "start_port": {
+            "equipment_id": "BC_P_004",
+            "port_id": "P1"
+          },
+          "end_port": {
+            "equipment_id": "Vg_002",
+            "port_id": "P1"
+          }
+        },
+        "properties": {
+          "length_m": 1.0,
+          "diameter_m": 0.1,
+          "roughness_mm": 0.1
+        },
+        "results": {
+          "flow_rate": 0.0,
+          "headloss": 0.0,
+          "velocity": 0.0,
+          "pressure_1": 0.0,
+          "head_1": 0.0,
+          "pressure_2": 0.0,
+          "head_2": 0.0,
+          "total_headloss": 0.0
+        }
+      },
+      {
+        "id": "pipe_001",
+        "points": [
+          {
+            "x": -80.0,
+            "y": 139.5
+          },
+          {
+            "x": -80.0,
+            "y": 111.25
+          },
+          {
+            "x": -80.0,
+            "y": 111.25
+          },
+          {
+            "x": -80.0,
+            "y": 83.0
+          }
+        ],
+        "connections": {
+          "start_port": {
+            "equipment_id": "Vg_002",
+            "port_id": "P2"
+          },
+          "end_port": {
+            "equipment_id": "V1_003",
+            "port_id": "P1"
+          }
+        },
+        "properties": {
+          "length_m": 1.0,
+          "diameter_m": 0.1,
+          "roughness_mm": 0.1
+        },
+        "results": {
+          "flow_rate": 0.0,
+          "headloss": 0.0,
+          "velocity": 0.0,
+          "pressure_1": 0.0,
+          "head_1": 0.0,
+          "pressure_2": 0.0,
+          "head_2": 0.0,
+          "total_headloss": 0.0
+        }
+      },
+      {
+        "id": "pipe_002",
+        "points": [
+          {
+            "x": -80.0,
+            "y": 27.0
+          },
+          {
+            "x": -80.0,
+            "y": -1.25
+          },
+          {
+            "x": -80.0,
+            "y": -1.25
+          },
+          {
+            "x": -80.0,
+            "y": -29.5
+          }
+        ],
+        "connections": {
+          "start_port": {
+            "equipment_id": "V1_003",
+            "port_id": "P2"
+          },
+          "end_port": {
+            "equipment_id": "Vs_000",
+            "port_id": "P1"
+          }
+        },
+        "properties": {
+          "length_m": 1.0,
+          "diameter_m": 0.1,
+          "roughness_mm": 0.1
+        },
+        "results": {
+          "flow_rate": 0.0,
+          "headloss": 0.0,
+          "velocity": 0.0,
+          "pressure_1": 0.0,
+          "head_1": 0.0,
+          "pressure_2": 0.0,
+          "head_2": 0.0,
+          "total_headloss": 0.0
+        }
+      },
+      {
+        "id": "pipe_003",
+        "points": [
+          {
+            "x": -80.0,
+            "y": -85.5
+          },
+          {
+            "x": -80.0,
+            "y": -113.75
+          },
+          {
+            "x": -80.0,
+            "y": -113.75
+          },
+          {
+            "x": -80.0,
+            "y": -142.0
+          }
+        ],
+        "connections": {
+          "start_port": {
+            "equipment_id": "Vs_000",
+            "port_id": "P2"
+          },
+          "end_port": {
+            "equipment_id": "Vb_001",
+            "port_id": "P1"
+          }
+        },
+        "properties": {
+          "length_m": 1.0,
+          "diameter_m": 0.1,
+          "roughness_mm": 0.1
+        },
+        "results": {
+          "flow_rate": 0.0,
+          "headloss": 0.0,
+          "velocity": 0.0,
+          "pressure_1": 0.0,
+          "head_1": 0.0,
+          "pressure_2": 0.0,
+          "head_2": 0.0,
+          "total_headloss": 0.0
+        }
+      },
+      {
+        "id": "pipe_004",
+        "points": [
+          {
+            "x": -80.0,
+            "y": -198.0
+          },
+          {
+            "x": -80.0,
+            "y": -279.8409999999999
+          },
+          {
+            "x": 221.74900624999998,
+            "y": -279.8409999999999
+          },
+          {
+            "x": 221.74900624999998,
+            "y": 295.0
+          }
+        ],
+        "connections": {
+          "start_port": {
+            "equipment_id": "Vb_001",
+            "port_id": "P2"
+          },
+          "end_port": {
+            "equipment_id": "BC_P_005",
+            "port_id": "P1"
+          }
+        },
+        "properties": {
+          "length_m": 1.0,
+          "diameter_m": 0.1,
+          "roughness_mm": 0.1
+        },
+        "results": {
+          "flow_rate": 0.0,
+          "headloss": 0.0,
+          "velocity": 0.0,
+          "pressure_1": 0.0,
+          "head_1": 0.0,
+          "pressure_2": 0.0,
+          "head_2": 0.0,
+          "total_headloss": 0.0
+        }
+      }
+    ],
+    "simulation": {
+      "last_run": null,
+      "status": "not_run",
+      "global_results": {}
+    }
+  }
+}

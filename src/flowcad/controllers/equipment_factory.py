@@ -57,7 +57,10 @@ class EquipmentFactory:
             if equipment_type == "CAR":  #il s'agit d'un clapet anti-retour
                 check_valve = True #variable qui définit si l'équipement est un clapet anti-retour
                 initial_status = 'OPEN'  #par défaut, le clapet est ouvert
-            elif equipment_type in ["V1", "Vb"]:  #il s'agit d'une vanne
+            elif equipment_type in ["C1_1"]:  #il s'agit d'un consommateur
+                check_valve = False
+                initial_status = 'OPEN'  #par défaut, le consommateur est ouvert
+            elif equipment_type in ["V1", "Vb", "Vs", "Vg"]:  #il s'agit d'une vanne
                 check_valve = False
                 opening_status = properties.get('opening_value', 100)
                 print(f"opening_status dans EquipmentFactory: {opening_status}")

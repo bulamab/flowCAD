@@ -1,4 +1,4 @@
-  Page 1                                    Thu Oct 02 14:27:52 2025
+  Page 1                                    Thu Oct 02 16:49:34 2025
 
   ******************************************************************
   *                           E P A N E T                          *
@@ -9,12 +9,12 @@
   
    
       Input Data File ................... temp.inp
-      Number of Junctions................ 1
-      Number of Reservoirs............... 1
+      Number of Junctions................ 6
+      Number of Reservoirs............... 2
       Number of Tanks ................... 0
-      Number of Pipes ................... 1
-      Number of Pumps ................... 0
-      Number of Valves .................. 0
+      Number of Pipes ................... 5
+      Number of Pumps ................... 1
+      Number of Valves .................. 1
       Headloss Formula .................. Darcy-Weisbach
       Nodal Demand Model ................ DDA
       Hydraulic Timestep ................ 1.00 hrs
@@ -33,6 +33,6 @@
          No Nodes
          No Links
    
-  Analysis begun Thu Oct 02 14:27:52 2025
+  Analysis begun Thu Oct 02 16:49:34 2025
 
-  Analysis ended Thu Oct 02 14:27:52 2025
+  Analysis ended Thu Oct 02 16:49:34 2025

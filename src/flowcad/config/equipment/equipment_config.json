@@ -12,8 +12,10 @@
         "vannes_arret": {
           "display_name": "Vannes d'arrêt",
           "equipment_items": [
+            "V1",
             "Vb",
-            "V1"
+            "Vs",
+            "Vg"
           ]
         },
         "vannes_reglage": {
@@ -38,15 +40,14 @@
         "consommateur_1": {
           "display_name": "Consommateur 1",
           "equipment_items": [
-            "consommateur_1_1",
-            "consommateur_1_2"
+            "C1_1"
           ]
         },
         "consommateur_2": {
           "display_name": "Consommateur 2",
           "equipment_items": [
-            "consommateur_2_1",
-            "consommateur_2_2"
+            "C2_1"
+
           ]
         }
       }
@@ -99,8 +100,8 @@
       }
     },
     "V1": {
-      "display_name": "Vanne d'arrêt",
-      "description": "vanne d'arrêt",
+      "display_name": "Organe d'arrêt",
+      "description": "soupapes, vannes à glissière, clapets, etc.",
       "icon_svg": "icons/vannes/V_arret.svg",
       "color": "#FF6B6B",
       "equipment_class": "HydraulicResistanceEquipment",
@@ -124,6 +125,48 @@
       "display_name": "Vanne à Boisseau",
       "description": "vanne à boisseau",
       "icon_svg": "icons/vannes/V_boisseau.svg",
+      "color": "#FF6B6B",
+      "equipment_class": "HydraulicResistanceEquipment",
+      "properties": {
+        "diameter_m": 2.0,
+        "zeta": 1.0,
+        "elevation": 0.0,
+        "opening_value": 100,
+        "valve_control_type": "binary"
+      },
+      "results": {
+        "flow_rate": 0.0,
+        "pressure_1": 0.0,
+        "pressure_2": 0.0,
+        "head_1": 0.0,
+        "head_2": 0.0
+      }
+    },
+    "Vs": {
+      "display_name": "Soupape",
+      "description": "soupape",
+      "icon_svg": "icons/vannes/V_soupape.svg",
+      "color": "#FF6B6B",
+      "equipment_class": "HydraulicResistanceEquipment",
+      "properties": {
+        "diameter_m": 2.0,
+        "zeta": 1.0,
+        "elevation": 0.0,
+        "opening_value": 100,
+        "valve_control_type": "binary"
+      },
+      "results": {
+        "flow_rate": 0.0,
+        "pressure_1": 0.0,
+        "pressure_2": 0.0,
+        "head_1": 0.0,
+        "head_2": 0.0
+      }
+    },
+    "Vg": {
+      "display_name": "Vanne à glissière",
+      "description": "vanne à glissière",
+      "icon_svg": "icons/vannes/V_glissiere.svg",
       "color": "#FF6B6B",
       "equipment_class": "HydraulicResistanceEquipment",
       "properties": {
@@ -226,72 +269,46 @@
         "pressure_3": 0.0
       }
     },
-    "consommateur_1_1": {
-      "display_name": "Consommateur 1.1",
-      "description": "Description du consommateur 1.1",
-      "icon_svg": "icons/consommateurs/consommateur_1_1.svg",
+    "C1_1": {
+      "display_name": "Consomateur générique",
+      "description": "Consommateur générique",
+      "icon_svg": "icons/consommateurs/conso1_1.svg",
       "color": "#FF6B6B",
       "equipment_class": "HydraulicResistanceEquipment",
       "properties": {
-        "prop1": 100.0,
-        "prop2": 50.0,
-        "prop3": 0.75
+        "diameter_m": 2.0,
+        "zeta": 1.0,
+        "elevation": 0.0,
+        "opening_value": 100,
+        "valve_control_type": "binary"
       },
       "results": {
         "flow_rate": 0.0,
-        "pressure_in": 0.0,
-        "pressure_out": 0.0
+        "pressure_1": 0.0,
+        "pressure_2": 0.0,
+        "head_1": 0.0,
+        "head_2": 0.0
       }
     },
-    "consommateur_1_2": {
-      "display_name": "Consommateur 1.2",
-      "description": "Description du consommateur 1.2",
-      "icon_svg": "icons/consommateurs/consommateur_1_2.svg",
-      "color": "#FF6B6B",
-      "equipment_class": "HydraulicResistanceEquipment",
-      "properties": {
-        "prop1": 100.0,
-        "prop2": 50.0,
-        "prop3": 0.75
-      },
-      "results": {
-        "flow_rate": 0.0,
-        "pressure_in": 0.0,
-        "pressure_out": 0.0
-      }
-    },
-        "consommateur_2_1": {
+    "C2_1": {
       "display_name": "Consommateur 2.1",
       "description": "Description du consommateur 2.1",
       "icon_svg": "icons/consommateurs/consommateur_2_1.svg",
       "color": "#FF6B6B",
       "equipment_class": "HydraulicResistanceEquipment",
       "properties": {
-        "prop1": 100.0,
-        "prop2": 50.0,
-        "prop3": 0.75
+        "diameter_m": 2.0,
+        "zeta": 1.0,
+        "elevation": 0.0,
+        "opening_value": 100,
+        "valve_control_type": "binary"
       },
       "results": {
         "flow_rate": 0.0,
-        "pressure_in": 0.0,
-        "pressure_out": 0.0
-      }
-    },
-    "consommateur_2_2": {
-      "display_name": "Consommateur 2.2",
-      "description": "Description du consommateur 2.2",
-      "icon_svg": "icons/consommateurs/consommateur_2_2.svg",
-      "color": "#FF6B6B",
-      "equipment_class": "HydraulicResistanceEquipment",
-      "properties": {
-        "prop1": 100.0,
-        "prop2": 50.0,
-        "prop3": 0.75
-      },
-      "results": {
-        "flow_rate": 0.0,
-        "pressure_in": 0.0,
-        "pressure_out": 0.0
+        "pressure_1": 0.0,
+        "pressure_2": 0.0,
+        "head_1": 0.0,
+        "head_2": 0.0
       }
     },
     "EXP": {
@@ -331,7 +348,7 @@
       "color": "#1E90FF",
       "equipment_class": "FlowRateBoundaryConditionEquipment",
       "properties": {
-        "débit_m3s": 0.001,
+        "flow_rate_m3s": 0.001,
         "elevation": 0.0
       },
       "results": {
