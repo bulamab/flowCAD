@@ -2,41 +2,24 @@
 
 [JUNCTIONS]
 ;ID                      Elevation       Demand Pattern                 
- pipe_002_P1_to_V3V_M_p_002_P1               0               0                            ;
- pipe_001_P2_to_V3V_M_p_002_P2               0               0                            ;
- pipe_003_P1_to_V3V_M_p_002_P3               0               0                            ;
- V3V_M_p_002_Mid                    0               0                            ;
- pipe_000_P2_to_T3p_003_P1               0               0                            ;
- pipe_001_P1_to_T3p_003_P2               0               0                            ;
- pipe_003_P2_to_T3p_003_P3               0               0                            ;
- T3p_003_Mid                        0               0                            ;
+ pipe_004_P1_to_BC_V_005_P1               0   -1585.0323141                            ;
 
 [RESERVOIRS]
 ;ID                                   Head                  Pattern
- pipe_000_P1_to_BC_P_000_P1    133.77532701                            ;
- pipe_002_P2_to_BC_P_001_P1    100.33149526                            ;
+ pipe_004_P2_to_BC_P_004_P1    100.33149526                            ;
 
 [TANKS]
 ;ID                              Elevation           Init Level            Min Level            Max Level             Diameter           Min Volume Volume Curve         Overflow            
 
 [PIPES]
 ;ID                   Node1                Node2                              Length             Diameter            Roughness           Minor Loss               Status
- V3V_M_p_002_Pipe1    pipe_002_P1_to_V3V_M_p_002_P1 V3V_M_p_002_Mid        0.03280839895     3.937007874 3.280839895e-06               0                 Open   ;
- T3p_003_Pipe1        pipe_000_P2_to_T3p_003_P1 T3p_003_Mid            0.03280839895     3.937007874 3.280839895e-07               0                 Open   ;
- T3p_003_Pipe2        pipe_001_P1_to_T3p_003_P2 T3p_003_Mid            0.03280839895     3.937007874 3.280839895e-07               0                 Open   ;
- T3p_003_Pipe3        pipe_003_P2_to_T3p_003_P3 T3p_003_Mid            0.03280839895     3.937007874 3.280839895e-07               0                 Open   ;
- pipe_000             pipe_000_P1_to_BC_P_000_P1 pipe_000_P2_to_T3p_003_P1     3.280839895     3.937007874    0.3280839895               0                 Open   ;
- pipe_001             pipe_001_P1_to_T3p_003_P2 pipe_001_P2_to_V3V_M_p_002_P2     328.0839895    0.3937007874    0.3280839895               0                 Open   ;
- pipe_002             pipe_002_P1_to_V3V_M_p_002_P1 pipe_002_P2_to_BC_P_001_P1     3.280839895     3.937007874    0.3280839895               0                 Open   ;
- pipe_003             pipe_003_P1_to_V3V_M_p_002_P3 pipe_003_P2_to_T3p_003_P3     3.280839895     3.937007874    0.3280839895               0                 Open   ;
+ pipe_004             pipe_004_P1_to_BC_V_005_P1 pipe_004_P2_to_BC_P_004_P1     3.280839895     3.937007874    0.3280839895               0                 Open   ;
 
 [PUMPS]
 ;ID                   Node1                Node2                Properties          
 
 [VALVES]
 ;ID                   Node1                Node2                            Diameter Type              Setting           Minor Loss
- V3V_M_p_002_Valve1   V3V_M_p_002_Mid      pipe_001_P2_to_V3V_M_p_002_P2     3.937007874 TCV     50463.111096    39971.830299   ;
- V3V_M_p_002_Valve2   V3V_M_p_002_Mid      pipe_003_P1_to_V3V_M_p_002_P3     3.937007874 TCV     3303457.0495    39971.830299   ;
 
 [TAGS]
 ;type      name       tag       
@@ -113,16 +96,8 @@ TOLERANCE            0.01
 
 [COORDINATES]
 ;Node      X-Coord    Y-Coord   
-pipe_000_P1_to_BC_P_000_P1          0.000000000          0.000000000
-pipe_002_P2_to_BC_P_001_P1          0.000000000          0.000000000
-pipe_002_P1_to_V3V_M_p_002_P1          0.000000000          0.000000000
-pipe_001_P2_to_V3V_M_p_002_P2          0.000000000          0.000000000
-pipe_003_P1_to_V3V_M_p_002_P3          0.000000000          0.000000000
-V3V_M_p_002_Mid          0.000000000          0.000000000
-pipe_000_P2_to_T3p_003_P1          0.000000000          0.000000000
-pipe_001_P1_to_T3p_003_P2          0.000000000          0.000000000
-pipe_003_P2_to_T3p_003_P3          0.000000000          0.000000000
-T3p_003_Mid          0.000000000          0.000000000
+pipe_004_P2_to_BC_P_004_P1          0.000000000          0.000000000
+pipe_004_P1_to_BC_V_005_P1          0.000000000          0.000000000
 
 [VERTICES]
 ;Link      X-Coord    Y-Coord   

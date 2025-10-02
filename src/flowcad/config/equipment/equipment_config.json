@@ -127,14 +127,18 @@
       "color": "#FF6B6B",
       "equipment_class": "HydraulicResistanceEquipment",
       "properties": {
-        "prop1": 100.0,
-        "prop2": 50.0,
-        "prop3": 0.75
+        "diameter_m": 2.0,
+        "zeta": 1.0,
+        "elevation": 0.0,
+        "opening_value": 100,
+        "valve_control_type": "binary"
       },
       "results": {
         "flow_rate": 0.0,
-        "pressure_in": 0.0,
-        "pressure_out": 0.0
+        "pressure_1": 0.0,
+        "pressure_2": 0.0,
+        "head_1": 0.0,
+        "head_2": 0.0
       }
     },
     "VE": {
@@ -142,16 +146,20 @@
       "description": "vanne d'équilibrage",
       "icon_svg": "icons/vannes/vannes_equilibrage.svg",
       "color": "#FF6B6B",
-      "equipment_class": "HydraulicResistanceEquipment",
+      "equipment_class": "ValveEquipment",
       "properties": {
-        "prop1": 100.0,
-        "prop2": 50.0,
-        "prop3": 0.75
+        "diameter_m": 0.1,
+        "kv_s": 1.0,
+        "elevation": 0.0,
+        "opening_value": 100,
+        "valve_control_type": "binary"
       },
       "results": {
         "flow_rate": 0.0,
-        "pressure_in": 0.0,
-        "pressure_out": 0.0
+        "pressure_1": 0.0,
+        "pressure_2": 0.0,
+        "head_1": 0.0,
+        "head_2": 0.0
       }
     },"V2V_p": {
       "display_name": "Vanne 2 voies, progressive",

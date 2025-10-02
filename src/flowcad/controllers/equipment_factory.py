@@ -57,7 +57,7 @@ class EquipmentFactory:
             if equipment_type == "CAR":  #il s'agit d'un clapet anti-retour
                 check_valve = True #variable qui définit si l'équipement est un clapet anti-retour
                 initial_status = 'OPEN'  #par défaut, le clapet est ouvert
-            elif equipment_type == "V1":  #il s'agit d'une vanne
+            elif equipment_type in ["V1", "Vb"]:  #il s'agit d'une vanne
                 check_valve = False
                 opening_status = properties.get('opening_value', 100)
                 print(f"opening_status dans EquipmentFactory: {opening_status}")
@@ -96,7 +96,7 @@ class EquipmentFactory:
                 properties.get('elevation', 0.0)
             )
         #---------------------------------------------------------------------------------------
-        #si l'équipement est une vanne 2V-------------------------------------------------------
+        #si l'équipement est une vanne -------------------------------------------------------
         elif equipment_class.__name__ == 'ValveEquipment':
 
             #Vanne de type vanne 2 voies, progressive (TCV) if equipment_type == "V2V_p"
@@ -147,7 +147,18 @@ class EquipmentFactory:
                     kv_eff = kv_s * (relative_opening / relative_opening_switch) * relative_kv_switch
                 else:
                     kv_eff = e**(n * (relative_opening - 1)) * kv_s
-
+            elif valve_control_type == 'binary':  #une vanne qui ne peut être que ouverte ou fermée
+                opening_value = float(opening_value)
+                print(f"valeur d'ouverture: {opening_value}")
+                kv_eff = properties.get('kv_s', 1.0)
+                zeta = hc.HydraulicConverter.zeta_from_kv(
+                kv=kv_eff,
+                diameter=properties.get('diameter_m', 0.1)
+                )
+                if opening_value < 50:
+                    status = 'CLOSED'
+                else: 
+                    status = 'OPEN'
             else:
                 raise ValueError(f"Type de contrôle de vanne inconnu: {valve_control_type}")
             
