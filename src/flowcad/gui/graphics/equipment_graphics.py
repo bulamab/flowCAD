@@ -484,11 +484,33 @@ class EquipmentGraphicsItem(QGraphicsItem):
                     property_link,
                     config.get('default', '')
                 )
+                # Formater la valeur si nécessaire (ex: unités)
+                formatted_value = self._format_property_for_svg(property_link, initial_value)
+
                 self.svg_content_properties[element_id] = {
                     'property_link': property_link,
-                    'value': initial_value
+                    'value': formatted_value
                 }
-                print(f"📋 Propriété SVG chargée: {element_id} → {property_link} = '{initial_value}'")
+                print(f"📋 Propriété SVG chargée: {element_id} → {property_link} = '{formatted_value}'")
+
+    def _format_property_for_svg(self, property_name: str, value) -> str:
+        """Formate une propriété pour l'affichage SVG"""
+        from ...core.unit_manager import UnitManager
+        unit_mgr = UnitManager.get_instance()
+        
+        # Convertir en float si possible
+        try:
+            numeric_value = float(value)
+        except (ValueError, TypeError):
+            return str(value)  # Retourner tel quel si non numérique
+        
+        # Formater selon le type de propriété
+        if property_name == 'flow_rate_nom':
+            return unit_mgr.format_flow(numeric_value)
+        elif property_name == 'pressure_nom':
+            return unit_mgr.format_pressure(numeric_value)
+        else:
+            return str(value)  # Propriétés non numériques (label_text, etc.)
 
     def _create_svg_with_new_system(self) -> Optional[str]:
         """✅ Crée le SVG avec le nouveau système (SVGDynamicManager)"""
@@ -591,11 +613,11 @@ class EquipmentGraphicsItem(QGraphicsItem):
             old_value = self.svg_content_properties[element_id]['value']
             self.svg_content_properties[element_id]['value'] = new_value
             
-            # Mettre à jour aussi dans equipment_def.properties
+            '''# Mettre à jour aussi dans equipment_def.properties
             property_link = self.svg_content_properties[element_id]['property_link']
             if 'properties' not in self.equipment_def:
                 self.equipment_def['properties'] = {}
-            self.equipment_def['properties'][property_link] = new_value
+            self.equipment_def['properties'][property_link] = new_value'''
             
             print(f"✏️ Propriété SVG modifiée: {element_id} '{old_value}' → '{new_value}'")
             

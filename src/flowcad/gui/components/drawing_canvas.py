@@ -12,6 +12,8 @@ from PyQt5.QtGui import QPen, QColor, QBrush, QWheelEvent, QContextMenuEvent
 import json
 from typing import Dict, List, Optional, Tuple
 
+from ...core.unit_manager import UnitManager
+
 # Import de la nouvelle classe graphique
 from ..graphics.equipment_graphics import *
 
@@ -40,6 +42,9 @@ class DrawingCanvas(QGraphicsView):
         # Configuration de base
         self.setup_view()
         self.setup_scene()
+
+        #pour les unités
+        self.unit_mgr = UnitManager()
         
         # Gestion des équipements
         self.equipment_counter = 0
@@ -790,9 +795,14 @@ class DrawingCanvas(QGraphicsView):
             # Mettre à jour les textes SVG si modifiés
             if 'label_text' in new_properties:
                 equipment_item.set_svg_text_property('Name', new_properties['label_text'])
-            elif 'flow_rate_nom' in new_properties:
-                equipment_item.set_svg_text_property('flow_rate_nom', new_properties['flow_rate_nom'])
+            if 'flow_rate_nom' in new_properties:
+                flow_rate_nom = self.unit_mgr.format_flow(new_properties['flow_rate_nom'])
+                equipment_item.set_svg_text_property('V_nom', flow_rate_nom)
+            if 'pressure_nom' in new_properties:
+                pressure_nom = self.unit_mgr.format_pressure(new_properties['pressure_nom'])
+                equipment_item.set_svg_text_property('P_nom', pressure_nom)
             print(f"🔧 Propriétés de {equipment_id} mises à jour: {json.dumps(new_properties, ensure_ascii=False)}")
+
             self.clear_all_results() #efface tous les résultats
             return True
         else:
