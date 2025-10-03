@@ -303,15 +303,37 @@
     "C2_1": {
       "display_name": "Consommateur 2.1",
       "description": "Description du consommateur 2.1",
-      "icon_svg": "icons/consommateurs/consommateur_2_1.svg",
+      "icon_svg": "icons/consommateurs/conso2_1.svg",
       "color": "#FF6B6B",
       "equipment_class": "HydraulicResistanceEquipment",
       "properties": {
         "diameter_m": 2.0,
         "zeta": 1.0,
         "elevation": 0.0,
-        "opening_value": 100,
-        "valve_control_type": "binary"
+        "label_text": "conso. 1",
+        "flow_rate_nom": 0.001,
+        "pressure_nom": 0.002
+      },
+      "svg_dynamic": {
+        "content": {
+          "text_elements": {
+            "Name": {
+              "property_link": "label_text",
+              "editable": true,
+              "default": "conso. 1"
+            },
+            "V_nom": {
+              "property_link": "flow_rate_nom",
+              "editable": true,
+              "default": "0.001"
+            },
+            "P_nom": {
+              "property_link": "pressure_nom",
+              "editable": true,
+              "default": "0.002"
+            }
+          }
+        }
       },
       "results": {
         "flow_rate": 0.0,

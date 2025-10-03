@@ -178,6 +178,10 @@ class SelectiveEditTreeWidget(QTreeWidget):
                         prop_value = self.unit_mgr.input_flow_to_m3s(float(prop_item.text(1)))
                     elif original_name == "label_text":
                         prop_value = prop_item.text(1)
+                    elif original_name == "flow_rate_nom":
+                        prop_value = self.unit_mgr.input_flow_to_m3s(float(prop_item.text(1)))
+                    elif original_name == "pressure_nom":
+                        prop_value = self.unit_mgr.input_pressure_to_pa(float(prop_item.text(1)))
                     else:
                         # Valeur normale pour les autres propriétés
                         prop_value = float(prop_item.text(1))  # temporaire, convertir en float
@@ -332,6 +336,8 @@ class RightPanel(QWidget):
             'valve_control_type': 'Type de contrôle de vanne',
             'flow_rate_m3s': f"Débit {self.unit_mgr.get_flow_unit_symbol()}",
             'label_text': 'Étiquette', 
+            'flow_rate_nom': f"Débit nominal {self.unit_mgr.get_flow_unit_symbol()}",
+            'pressure_nom': f"Pression nominale {self.unit_mgr.get_pressure_unit_symbol()}",
             # Ajoutez d'autres mappings selon vos besoins
         }
             
@@ -344,7 +350,8 @@ class RightPanel(QWidget):
             'pressure',
             'pressure_1', 'pressure_2', 'pressure_3',
             'head_1', 'head_2', 'head_3',
-            'total_headloss'
+            'total_headloss',
+            'pressure_nom'
         ]
         
         prop_name_lower = prop_name.lower()
@@ -359,7 +366,7 @@ class RightPanel(QWidget):
         """Détermine si une propriété est un débit"""
         flow_keywords = [
             'flow', 'flowrate', 'debit', 'débit',
-            'flow_rate', 'flowrate_m3s', 'volume_flow'
+            'flow_rate', 'flowrate_m3s', 'volume_flow','flow_rate_nom'
         ]
 
         prop_name_lower = prop_name.lower()
@@ -452,6 +459,18 @@ class RightPanel(QWidget):
                 self.properties_tree.setItemWidget(prop_item, 1, valve_widget)
                 prop_item.setData(1, Qt.UserRole, prop_value)
                 prop_item.setData(0, Qt.UserRole, prop_name)  
+            elif prop_name == "flow_rate_nom":
+                # Convertir depuis m³/s vers l'unité utilisateur
+                prop_value_display = self.unit_mgr.display_flow(float(prop_value))
+                prop_item = QTreeWidgetItem(properties_item, [display_name, str(prop_value_display)])
+                prop_item.setFlags(prop_item.flags() | Qt.ItemIsEditable)
+                prop_item.setData(0, Qt.UserRole, prop_name)  # Nom technique original
+            elif prop_name == "pressure_nom":
+                # Convertir depuis Pa vers l'unité utilisateur
+                prop_value_display = self.unit_mgr.display_pressure(float(prop_value))
+                prop_item = QTreeWidgetItem(properties_item, [display_name, str(prop_value_display)])
+                prop_item.setFlags(prop_item.flags() | Qt.ItemIsEditable)
+                prop_item.setData(0, Qt.UserRole, prop_name)  # Nom technique original
             else:
                 # CAS NORMAL : propriété éditable classique
                 prop_item = QTreeWidgetItem(properties_item, [display_name, str(prop_value)])
