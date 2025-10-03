@@ -39,6 +39,7 @@ class LeftPanel(QWidget):
                 left: 5px; /* décalage des onglets */
             }
             QTabBar::tab {
+                min-width: 80px;  /* Largeur minimale de chaque onglet */
                 background-color: #f0f0f0;
                 border: 1px solid #ccc;
                 border-bottom-color: #ccc;
