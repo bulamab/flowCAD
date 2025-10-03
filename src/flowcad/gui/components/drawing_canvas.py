@@ -787,6 +787,9 @@ class DrawingCanvas(QGraphicsView):
         equipment_item = self.get_equipment(equipment_id)
         if equipment_item:
             equipment_item.update_properties(new_properties)
+            # ✨ NOUVEAU : Mettre à jour les textes SVG si modifiés
+            if 'label_text' in new_properties:
+                equipment_item.set_svg_text_property('Name', new_properties['label_text'])
             print(f"🔧 Propriétés de {equipment_id} mises à jour: {json.dumps(new_properties, ensure_ascii=False)}")
             self.clear_all_results() #efface tous les résultats
             return True

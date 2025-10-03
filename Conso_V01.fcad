@@ -1,0 +1,388 @@
+{
+  "flowcad_project": {
+    "version": "1.0",
+    "metadata": {
+      "created": "2025-10-03T15:16:17.170142",
+      "modified": "2025-10-03T15:16:17.170142",
+      "author": "FlowCAD User",
+      "description": "Projet FlowCAD"
+    },
+    "canvas": {
+      "view_settings": {
+        "zoom": 1.0,
+        "center_x": 0.0,
+        "center_y": 0.0
+      }
+    },
+    "equipment": [
+      {
+        "id": "C1_1_000",
+        "type": "C1_1",
+        "class": "HydraulicResistanceEquipment",
+        "position": {
+          "x": -87.58,
+          "y": -349.63749999999993
+        },
+        "transformation": {
+          "rotation_angle": 0,
+          "mirror_h": false,
+          "mirror_v": false,
+          "scale": 2
+        },
+        "definition": {
+          "display_name": "Consomateur générique",
+          "description": "Consommateur générique",
+          "equipment_class": "HydraulicResistanceEquipment",
+          "color": "#FF6B6B"
+        },
+        "properties": {
+          "diameter_m": 2.0,
+          "zeta": 1.0,
+          "elevation": 0.0,
+          "label_text": "A"
+        },
+        "results": {
+          "flow_rate": 0.0,
+          "pressure_1": 0.0,
+          "pressure_2": 0.0,
+          "head_1": 0.0,
+          "head_2": 0.0
+        },
+        "ports": {
+          "P1": {
+            "status": "connected",
+            "connected_to": null
+          },
+          "P2": {
+            "status": "connected",
+            "connected_to": null
+          }
+        }
+      },
+      {
+        "id": "p1_001",
+        "type": "p1",
+        "class": "PumpEquipment",
+        "position": {
+          "x": -184.42,
+          "y": -111.21749999999997
+        },
+        "transformation": {
+          "rotation_angle": 0,
+          "mirror_h": false,
+          "mirror_v": false,
+          "scale": 2
+        },
+        "definition": {
+          "display_name": "Pompe",
+          "description": "pompe centrifuge",
+          "equipment_class": "PumpEquipment",
+          "color": "#FF6B6B"
+        },
+        "properties": {
+          "curve_points": [
+            [
+              0.04,
+              20000
+            ]
+          ],
+          "elevation": 0.0
+        },
+        "results": {
+          "flow_rate": 0.0,
+          "pressure_1": 0.0,
+          "head_1": 0.0,
+          "pressure_2": 0.0,
+          "head_2": 0.0,
+          "head_gain": 0.0
+        },
+        "ports": {
+          "P1": {
+            "status": "connected",
+            "connected_to": null
+          },
+          "P2": {
+            "status": "connected",
+            "connected_to": null
+          }
+        }
+      },
+      {
+        "id": "T3p_002",
+        "type": "T3p",
+        "class": "TeeConnectionEquipment",
+        "position": {
+          "x": -73.6775,
+          "y": 209.385
+        },
+        "transformation": {
+          "rotation_angle": 90,
+          "mirror_h": false,
+          "mirror_v": false,
+          "scale": 2
+        },
+        "definition": {
+          "display_name": "Jonction 3 Tuyaux",
+          "description": "Jonction pour 3 tuyaux",
+          "equipment_class": "TeeConnectionEquipment",
+          "color": "#1E90FF"
+        },
+        "properties": {
+          "diameter_m": 0.1,
+          "elevation": 0.0
+        },
+        "results": {
+          "flowrate_1": 0.0,
+          "flowrate_2": 0.0,
+          "flowrate_3": 0.0,
+          "pressure_1": 0.0,
+          "head_1": 0.0,
+          "pressure_2": 0.0,
+          "head_2": 0.0,
+          "pressure_3": 0.0,
+          "head_3": 0.0
+        },
+        "ports": {
+          "P1": {
+            "status": "connected",
+            "connected_to": null
+          },
+          "P2": {
+            "status": "connected",
+            "connected_to": null
+          },
+          "P3": {
+            "status": "connected",
+            "connected_to": null
+          }
+        }
+      },
+      {
+        "id": "EXP_003",
+        "type": "EXP",
+        "class": "PressureBoundaryConditionEquipment",
+        "position": {
+          "x": -350.9,
+          "y": 69.77750000000003
+        },
+        "transformation": {
+          "rotation_angle": 0,
+          "mirror_h": false,
+          "mirror_v": false,
+          "scale": 2
+        },
+        "definition": {
+          "display_name": "Dispositif d'expansion",
+          "description": "Dispositif d'expansion simple",
+          "equipment_class": "PressureBoundaryConditionEquipment",
+          "color": "#FF6B6B"
+        },
+        "properties": {
+          "pressure_bar": 3.0,
+          "elevation": 0.0
+        },
+        "results": {
+          "pressure_1": 0.0,
+          "head_1": 0.0
+        },
+        "ports": {
+          "P1": {
+            "status": "connected",
+            "connected_to": null
+          }
+        }
+      }
+    ],
+    "pipes": [
+      {
+        "id": "pipe_000",
+        "points": [
+          {
+            "x": -154.41999924409447,
+            "y": -107.21750020157478
+          },
+          {
+            "x": -154.41999924409447,
+            "y": -279.63749999999993
+          },
+          {
+            "x": -85.58,
+            "y": -279.63749999999993
+          },
+          {
+            "x": -85.58,
+            "y": -279.63749999999993
+          }
+        ],
+        "connections": {
+          "start_port": {
+            "equipment_id": "p1_001",
+            "port_id": "P2"
+          },
+          "end_port": {
+            "equipment_id": "C1_1_000",
+            "port_id": "P1"
+          }
+        },
+        "properties": {
+          "length_m": 1.0,
+          "diameter_m": 0.1,
+          "roughness_mm": 0.1
+        },
+        "results": {
+          "flow_rate": 0.0,
+          "headloss": 0.0,
+          "velocity": 0.0,
+          "pressure_1": 0.0,
+          "head_1": 0.0,
+          "pressure_2": 0.0,
+          "head_2": 0.0,
+          "total_headloss": 0.0
+        }
+      },
+      {
+        "id": "pipe_001",
+        "points": [
+          {
+            "x": 50.42,
+            "y": -279.63749999999993
+          },
+          {
+            "x": 142.82999999999998,
+            "y": -279.63749999999993
+          },
+          {
+            "x": 142.82999999999998,
+            "y": 239.385
+          },
+          {
+            "x": -15.677499999999995,
+            "y": 239.385
+          }
+        ],
+        "connections": {
+          "start_port": {
+            "equipment_id": "C1_1_000",
+            "port_id": "P2"
+          },
+          "end_port": {
+            "equipment_id": "T3p_002",
+            "port_id": "P2"
+          }
+        },
+        "properties": {
+          "length_m": 1.0,
+          "diameter_m": 0.1,
+          "roughness_mm": 0.1
+        },
+        "results": {
+          "flow_rate": 0.0,
+          "headloss": 0.0,
+          "velocity": 0.0,
+          "pressure_1": 0.0,
+          "head_1": 0.0,
+          "pressure_2": 0.0,
+          "head_2": 0.0,
+          "total_headloss": 0.0
+        }
+      },
+      {
+        "id": "pipe_002",
+        "points": [
+          {
+            "x": -71.6775,
+            "y": 239.385
+          },
+          {
+            "x": -154.41999924409447,
+            "y": 239.385
+          },
+          {
+            "x": -154.41999924409447,
+            "y": -55.21750025196848
+          },
+          {
+            "x": -154.41999924409447,
+            "y": -55.21750025196848
+          }
+        ],
+        "connections": {
+          "start_port": {
+            "equipment_id": "T3p_002",
+            "port_id": "P1"
+          },
+          "end_port": {
+            "equipment_id": "p1_001",
+            "port_id": "P1"
+          }
+        },
+        "properties": {
+          "length_m": 1.0,
+          "diameter_m": 0.1,
+          "roughness_mm": 0.1
+        },
+        "results": {
+          "flow_rate": 0.0,
+          "headloss": 0.0,
+          "velocity": 0.0,
+          "pressure_1": 0.0,
+          "head_1": 0.0,
+          "pressure_2": 0.0,
+          "head_2": 0.0,
+          "total_headloss": 0.0
+        }
+      },
+      {
+        "id": "pipe_003",
+        "points": [
+          {
+            "x": -43.677499999999995,
+            "y": 267.385
+          },
+          {
+            "x": -43.677499999999995,
+            "y": 309.465
+          },
+          {
+            "x": -280.9598,
+            "y": 309.465
+          },
+          {
+            "x": -280.9598,
+            "y": 200.00992200000005
+          }
+        ],
+        "connections": {
+          "start_port": {
+            "equipment_id": "T3p_002",
+            "port_id": "P3"
+          },
+          "end_port": {
+            "equipment_id": "EXP_003",
+            "port_id": "P1"
+          }
+        },
+        "properties": {
+          "length_m": 1.0,
+          "diameter_m": 0.1,
+          "roughness_mm": 0.1
+        },
+        "results": {
+          "flow_rate": 0.0,
+          "headloss": 0.0,
+          "velocity": 0.0,
+          "pressure_1": 0.0,
+          "head_1": 0.0,
+          "pressure_2": 0.0,
+          "head_2": 0.0,
+          "total_headloss": 0.0
+        }
+      }
+    ],
+    "simulation": {
+      "last_run": null,
+      "status": "not_run",
+      "global_results": {}
+    }
+  }
+}

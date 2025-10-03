@@ -20,6 +20,7 @@ import xml.etree.ElementTree as ET
 from numpy import cos, sin, radians
 
 from .pipe_style_manager import pipe_style_manager
+from . svg_dynamic_manager import svg_dynamic_manager
 
 #from .polyline_graphics import PolylineGraphicsItem
 
@@ -320,6 +321,9 @@ class EquipmentGraphicsItem(QGraphicsItem):
     # L'échelle est définie globalement
     EQUIPEMENT_SCALE = 2
 
+    # Variable de classe pour contrôler la migration
+    USE_NEW_SVG_SYSTEM = True  # ✅ Toggle pour basculer facilement entre les systèmes (ancien et nouveau svg manager)
+
     def __init__(self, equipment_id: str, equipment_def: dict, svg_path: str = None, equipment_type: str = "generic"):
         super().__init__()
         
@@ -357,7 +361,15 @@ class EquipmentGraphicsItem(QGraphicsItem):
         self.setAcceptHoverEvents(True)
 
         # Connecter aux changements de styles
-        pipe_style_manager.styles_changed.connect(self.on_pipe_styles_changed)
+        if self.USE_NEW_SVG_SYSTEM:
+            svg_dynamic_manager.svg_modified.connect(self._on_svg_modified)
+        else:
+            # Ancien système
+            pipe_style_manager.styles_changed.connect(self.on_pipe_styles_changed)
+
+        # Stocker les propriétés de contenu SVG
+        self.svg_content_properties = {}
+        self._load_svg_content_properties()
 
         # Créer les composants
         self.create_components()
@@ -401,9 +413,10 @@ class EquipmentGraphicsItem(QGraphicsItem):
 
         #print(f"scale {self.item_scale}")
         # Obtenir le SVG modifié avec les styles de tuyaux
-        styled_svg_content = pipe_style_manager.apply_pipe_styles_to_svg(
-            self.svg_path, self.current_visual_state, self.item_scale
-        )
+        if self.USE_NEW_SVG_SYSTEM:
+            styled_svg_content = self._create_svg_with_new_system()
+        else:
+            styled_svg_content = self._create_svg_with_old_system()
 
         #cacher les ports pour qu'ils ne soient pas visibles
         styled_svg_content=self.hide_svg_ports(styled_svg_content)
@@ -457,26 +470,174 @@ class EquipmentGraphicsItem(QGraphicsItem):
             # Recréer le SVG avec les nouveaux styles
             self.update_svg_styles()
 
+    def _load_svg_content_properties(self):
+        """Charge les propriétés de contenu SVG depuis equipment_def"""
+        svg_dynamic = self.equipment_def.get('svg_dynamic', {})
+        content_config = svg_dynamic.get('content', {})
+        text_elements = content_config.get('text_elements', {})
+        
+        for element_id, config in text_elements.items():
+            property_link = config.get('property_link')
+            if property_link:
+                # Récupérer la valeur initiale depuis properties
+                initial_value = self.equipment_def.get('properties', {}).get(
+                    property_link,
+                    config.get('default', '')
+                )
+                self.svg_content_properties[element_id] = {
+                    'property_link': property_link,
+                    'value': initial_value
+                }
+                print(f"📋 Propriété SVG chargée: {element_id} → {property_link} = '{initial_value}'")
+
+    def _create_svg_with_new_system(self) -> Optional[str]:
+        """✅ Crée le SVG avec le nouveau système (SVGDynamicManager)"""
+        
+        modifications = {
+            'styles': {
+                'pipe_state': self.current_visual_state,
+                'scale_factor': self.item_scale
+            }
+        }
+
+        #  Ajouter les modifications de contenu
+        if self.svg_content_properties:
+            text_mods = {}
+            for element_id, config in self.svg_content_properties.items():
+                text_mods[element_id] = str(config['value'])
+            
+            modifications['content'] = {
+                'text_elements': text_mods
+            }
+            print(f"📝 Modifications de contenu: {text_mods}")
+
+        
+        return svg_dynamic_manager.modify_svg(
+            self.svg_path,
+            self.equipment_id,
+            modifications
+        )
+    
+    def _create_svg_with_old_system(self) -> Optional[str]:
+        """⚠️ Crée le SVG avec l'ancien système (pipe_style_manager)"""
+        
+        styled_svg_content = pipe_style_manager.apply_pipe_styles_to_svg(
+            self.svg_path,
+            self.current_visual_state,
+            self.item_scale
+        )
+        
+        return styled_svg_content
+
     def update_svg_styles(self):
         """Met à jour les styles du SVG selon l'état actuel"""
         if not self.svg_path or not self.svg_item:
             return
         
-        # Obtenir le SVG modifié avec les nouveaux styles
-        styled_svg_content = pipe_style_manager.apply_pipe_styles_to_svg(
-            self.svg_path, self.current_visual_state, self.item_scale
-        )
+        if self.USE_NEW_SVG_SYSTEM:
+            # ✅ NOUVEAU SYSTÈME
+            self._update_svg_with_new_system()
+        else:
+            # ⚠️ ANCIEN SYSTÈME
+            self._update_svg_with_old_system()
+    
+    def _update_svg_with_new_system(self):
+        """✅ Met à jour avec le nouveau système"""
+        
+        modifications = {
+            'styles': {
+                'pipe_state': self.current_visual_state,
+                'scale_factor': self.item_scale
+            }
+        }
+        
+        #  Ajouter les modifications de contenu
+        if self.svg_content_properties:
+            text_mods = {}
+            for element_id, config in self.svg_content_properties.items():
+                text_mods[element_id] = str(config['value'])
+            
+            modifications['content'] = {
+                'text_elements': text_mods
+            }
 
-        #cacher les ports pour qu'ils ne soient pas visibles
-        styled_svg_content=self.hide_svg_ports(styled_svg_content)
+
+        styled_svg_content = svg_dynamic_manager.modify_svg(
+            self.svg_path,
+            self.equipment_id,
+            modifications
+        )
         
         if styled_svg_content:
+            # Cacher les ports
+            styled_svg_content = self.hide_svg_ports(styled_svg_content)
+            
             # Mettre à jour le renderer
             svg_data = QByteArray(styled_svg_content.encode('utf-8'))
             renderer = QSvgRenderer(svg_data)
             self.svg_item.setSharedRenderer(renderer)
             
-            print(f"🔄 Styles SVG mis à jour pour {self.equipment_id}")
+            print(f"🔄 Styles SVG mis à jour pour {self.equipment_id} (nouveau système)")
+    
+    def set_svg_text_property(self, element_id: str, new_value: str):
+        """
+        Définit la valeur d'une propriété texte SVG
+        
+        Args:
+            element_id: ID de l'élément SVG (ex: 'Name')
+            new_value: Nouvelle valeur du texte
+        """
+        if element_id in self.svg_content_properties:
+            old_value = self.svg_content_properties[element_id]['value']
+            self.svg_content_properties[element_id]['value'] = new_value
+            
+            # Mettre à jour aussi dans equipment_def.properties
+            property_link = self.svg_content_properties[element_id]['property_link']
+            if 'properties' not in self.equipment_def:
+                self.equipment_def['properties'] = {}
+            self.equipment_def['properties'][property_link] = new_value
+            
+            print(f"✏️ Propriété SVG modifiée: {element_id} '{old_value}' → '{new_value}'")
+            
+            # Rafraîchir le SVG
+            self.update_svg_styles()
+        else:
+            print(f"⚠️ Propriété SVG '{element_id}' non trouvée")
+
+    def _update_svg_with_old_system(self):
+        """⚠️ Met à jour avec l'ancien système"""
+        
+        styled_svg_content = pipe_style_manager.apply_pipe_styles_to_svg(
+            self.svg_path,
+            self.current_visual_state,
+            self.item_scale
+        )
+        
+        # Cacher les ports
+        styled_svg_content = self.hide_svg_ports(styled_svg_content)
+        
+        if styled_svg_content:
+            svg_data = QByteArray(styled_svg_content.encode('utf-8'))
+            renderer = QSvgRenderer(svg_data)
+            self.svg_item.setSharedRenderer(renderer)
+            
+            print(f"🔄 Styles SVG mis à jour pour {self.equipment_id} (ancien système)")
+    
+    def _on_svg_modified(self, equipment_id: str, svg_content: str):
+        """Callback quand un SVG est modifié (nouveau système)"""
+        if equipment_id == self.equipment_id:
+            print(f"📡 Signal reçu: SVG modifié pour {equipment_id}")
+            # Le SVG a déjà été mis à jour par modify_svg
+    
+    def __del__(self):
+        """Nettoyage lors de la destruction"""
+        try:
+            if self.USE_NEW_SVG_SYSTEM:
+                svg_dynamic_manager.svg_modified.disconnect(self._on_svg_modified)
+            else:
+                pipe_style_manager.styles_changed.disconnect(self.on_pipe_styles_changed)
+        except:
+            pass
 
     def on_pipe_styles_changed(self):
         """Callback quand les styles globaux des tuyaux changent"""

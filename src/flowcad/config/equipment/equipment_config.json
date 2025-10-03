@@ -279,8 +279,18 @@
         "diameter_m": 2.0,
         "zeta": 1.0,
         "elevation": 0.0,
-        "opening_value": 100,
-        "valve_control_type": "binary"
+        "label_text": "A"
+      },
+      "svg_dynamic": {
+        "content": {
+          "text_elements": {
+            "Name": {
+              "property_link": "label_text",
+              "editable": true,
+              "default": "A"
+            }
+          }
+        }
       },
       "results": {
         "flow_rate": 0.0,

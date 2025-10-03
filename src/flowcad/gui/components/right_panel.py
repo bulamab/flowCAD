@@ -176,6 +176,8 @@ class SelectiveEditTreeWidget(QTreeWidget):
                     elif original_name == "flow_rate_m3s":
                         # Reconvertir depuis l'unité utilisateur vers m³/s
                         prop_value = self.unit_mgr.input_flow_to_m3s(float(prop_item.text(1)))
+                    elif original_name == "label_text":
+                        prop_value = prop_item.text(1)
                     else:
                         # Valeur normale pour les autres propriétés
                         prop_value = float(prop_item.text(1))  # temporaire, convertir en float
@@ -329,6 +331,7 @@ class RightPanel(QWidget):
             'opening_value': 'État d\'ouverture',
             'valve_control_type': 'Type de contrôle de vanne',
             'flow_rate_m3s': f"Débit {self.unit_mgr.get_flow_unit_symbol()}",
+            'label_text': 'Étiquette', 
             # Ajoutez d'autres mappings selon vos besoins
         }
             
@@ -401,7 +404,14 @@ class RightPanel(QWidget):
         properties = properties_data.get('properties', {})
         for prop_name, prop_value in properties.items():
             display_name = self.format_property_name(prop_name)
-            if prop_name == "flow_rate_m3s":
+
+            if prop_name == "label_text":
+                prop_item = QTreeWidgetItem(properties_item, [display_name, str(prop_value)])
+                prop_item.setFlags(prop_item.flags() | Qt.ItemIsEditable)
+                prop_item.setData(0, Qt.UserRole, prop_name)
+                # Icône pour indiquer que c'est un texte SVG
+                prop_item.setToolTip(1, "💬 Texte affiché dans le symbole SVG")
+            elif prop_name == "flow_rate_m3s":
                 # Convertir depuis m³/s vers l'unité utilisateur
                 prop_value_display = self.unit_mgr.display_flow(float(prop_value))
                 prop_item = QTreeWidgetItem(properties_item, [display_name, str(prop_value_display)])
